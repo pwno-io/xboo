@@ -2,7 +2,7 @@ from langchain_openai import ChatOpenAI
 from langgraph.prebuilt import create_react_agent
 from langchain_core.messages import HumanMessage, SystemMessage
 from .tool import execution, python
-# create agent
+from src.state import State
 
 class Scout:
     def __init__(self):
@@ -16,11 +16,17 @@ class Scout:
             tools=[execution, python]
         )
 
-    def invoke(self, state):
+    def invoke(self, state: State) -> State:
         result: None = self.agent.invoke( 
             {
                 "messages": [
-                    HumanMessage(content=state["message"])
+                    HumanMessage(content=
+                        f"Do your context engineer here with {state['key']}"
+                    ),
                 ]
             }
         )
+        return {
+            "findings": result.get("findings", []),
+            "messages": result.get("messages", []),
+        }

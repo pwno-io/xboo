@@ -1,4 +1,5 @@
 from typing import TypedDict
+from langchain_core.messages import AnyMessage
 
 class Finding(TypedDict):
     type: str
@@ -15,5 +16,6 @@ class Target(TypedDict):
     port: int
 
 class State(TypedDict):
+    messages: list[AnyMessage]
     target: Target
     findings: list[FindingWithFeedback]
