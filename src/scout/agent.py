@@ -64,18 +64,21 @@ class Scout:
         # STAGE 1: STRATEGIST - Define strategic objective
         strategist_message = self.message_builder.build_strategist_message(state)
         strategic_objective = self.strategist.invoke(strategist_message)
-        
+        print("TEST1:", strategic_objective)
+
         # STAGE 2: TACTICIAN - Create task DAG
         tactician_message = self.message_builder.build_tactician_message(
             strategic_objective, state
         )
         task_graph, task_dag = self.tactician.invoke(tactician_message)
-        
+        print("TEST2:", task_graph, task_dag)
+
         # STAGE 3: EXECUTOR - Execute tasks in topological order
         new_findings = self._execute_tasks(
             task_graph, task_dag, strategic_objective, state
         )
-        
+        print("TEST3:", new_findings)
+
         # Return updated state
         return {
             "messages": state.get("messages", []) + [

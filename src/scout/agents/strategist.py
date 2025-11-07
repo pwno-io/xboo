@@ -38,7 +38,6 @@ class Strategist:
         result = self.agent.invoke({
             "messages": [HumanMessage(content=message)]
         })
-        
         # Extract last message content from LangGraph result
         messages = result.get("messages", [])
         if messages:

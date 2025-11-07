@@ -38,19 +38,30 @@ class Tactician:
             Tuple of (task_graph dict, NetworkX DiGraph)
         """
         # LangGraph API uses messages list
+        print("IN")
         result = self.agent.invoke({
             "messages": [HumanMessage(content=message)]
         })
         
         # Extract last message content from LangGraph result
         messages = result.get("messages", [])
-        tactician_output = ""
-        if messages:
-            last_message = messages[-1]
-            tactician_output = str(last_message.content)
-        
+        print("TEST:", messages)
+        task_data = None
+
+        # Try to find the tool's JSON payload from messages (prefer latest parsable JSON)
+        for msg in reversed(messages):
+            try:
+                content_str = str(getattr(msg, "content", ""))
+                parsed = json.loads(content_str)
+                if isinstance(parsed, dict) and ("nodes" in parsed or "edges" in parsed):
+                    task_data = parsed
+                    break
+            except (json.JSONDecodeError, TypeError):
+                continue
+
         try:
-            task_data = json.loads(tactician_output)
+            if task_data is None:
+                raise json.JSONDecodeError("No JSON task data found", doc="", pos=0)
 
             # Build networkx DAG
             G = nx.DiGraph()

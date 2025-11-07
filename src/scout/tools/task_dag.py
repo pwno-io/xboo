@@ -14,5 +14,3 @@ def create_task_dag(nodes, edges, evidence_criteria):  # type: ignore[no-untyped
     dag = TaskDag(nodes=nodes, edges=edges, evidence_criteria=evidence_criteria)
     # Return as JSON string for downstream parsing
     return json.dumps(dag.model_dump())
-
-

@@ -71,6 +71,8 @@ Do NOT flag as new surface:
             # Use structured output to get analysis
             structured_llm = self.model.with_structured_output(
                 schema={
+                    "title": "AttackSurfaceAnalyses",
+                    "description": "Analyses identifying new attack surfaces derived from findings.",
                     "type": "object",
                     "properties": {
                         "analyses": {
