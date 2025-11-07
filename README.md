@@ -48,15 +48,36 @@ Assuming you have already [installed LangGraph Studio](https://github.com/langch
 uv sync
 ```
 
-2. Create a `.env` file (if you have one):
+2. Create a `.env` file:
 
 ```bash
 cp .env.example .env
 ```
 
-3. Define required API keys in your `.env` file.
+3. Configure your API keys in the `.env` file:
 
-The primary [search tool](./src/react_agent/tools.py) [^1] used is [Tavily](https://tavily.com/). Create an API key [here](https://app.tavily.com/sign-in).
+**For Moonshot AI (Kimi) - Default:**
+```bash
+MOONSHOT_API_KEY=your_moonshot_api_key_here
+MOONSHOT_BASE_URL=https://api.moonshot.cn/v1
+MOONSHOT_MODEL=kimi-k2-thinking
+```
+
+Get your API key from: https://platform.moonshot.cn/console/api-keys
+
+Other available models:
+```bash
+# MOONSHOT_MODEL=moonshot-v1-8k
+# MOONSHOT_MODEL=moonshot-v1-32k
+# MOONSHOT_MODEL=moonshot-v1-128k
+```
+
+**For OpenAI - Alternative:**
+```bash
+OPENAI_API_KEY=your_openai_api_key_here
+OPENAI_BASE_URL=https://api.openai.com/v1
+OPENAI_MODEL=gpt-4
+```
 
 ### Setup Model
 
