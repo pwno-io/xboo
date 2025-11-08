@@ -1,4 +1,4 @@
-from typing import Any, List, Literal, TypedDict
+from typing import Any, List, Literal, TypedDict, Optional
 
 from langchain_core.messages import AnyMessage
 from pydantic import BaseModel
@@ -70,12 +70,14 @@ class StateModel(BaseModel):
         }
 
 
-class ListFindingsWithFeedbackModel(BaseModel):
+class ReconOutput(BaseModel):
     findings: List[FindingWithFeedbackModel]
+    target: List[TargetModel]
 
     def to_struct(self) -> dict[str, Any]:
         """Convert to TypedDict-compatible dictionary."""
         return {
+            "target": [target.to_struct() for target in self.target],
             "findings": [finding.to_struct() for finding in self.findings],
         }
 
@@ -100,5 +102,5 @@ class Target(TypedDict):
 
 class State(TypedDict):
     messages: list[AnyMessage]
-    target: Target
+    target: list[Target]
     findings: list[FindingWithFeedback]

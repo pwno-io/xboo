@@ -1,5 +1,7 @@
 from src.recon.agent import Recon
+from src.scout.agent import Scout
 from src.state import State, Target
+from langchain_core.messages import HumanMessage
 
 
 def main():
@@ -7,31 +9,27 @@ def main():
 
     # Initialize the recon agent
     recon = Recon()
-
-    target: Target = {"ip": "localhost", "port": 3000}
+    initial_context = "CHALLENGE: Trading Platform. The target is in localhost."
 
     # Create initial state
-    initial_state: State = {"messages": [], "target": target, "findings": []}
+    initial_state: State = {
+        "messages": [
+            HumanMessage(content=initial_context),
+            HumanMessage(content="Please solve the challenge and find the flag."),
+        ],
+        "target": [],
+        "findings": [],
+    }
 
-    print(f"Target: {target['ip']}:{target['port']}")
     print("=" * 60)
     print("Starting reconnaissance...\n")
 
     # Invoke the recon agent
     result = recon.invoke(initial_state)
-
-    print("\n" + "=" * 60)
-    print("✅ Reconnaissance Complete!")
-    print(f"\nMessages: {len(result.get('messages', []))}")
-    print(f"Findings: {len(result.get('findings', []))}")
-
-    if result.get("messages"):
-        print("\n📋 Agent Output:")
-        for msg in result["messages"]:
-            if isinstance(msg, str):
-                print(msg)
-            else:
-                print(msg.content if hasattr(msg, "content") else str(msg))
+    scout = Scout()
+    scout_result = scout.invoke(result)
+    print("scout_result:", scout_result)
+    print(scout.route(scout_result))
 
 
 if __name__ == "__main__":

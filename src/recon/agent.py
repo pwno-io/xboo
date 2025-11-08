@@ -2,7 +2,7 @@ from os import getenv
 import subprocess
 from langchain_core.messages import HumanMessage
 from langchain.agents import create_agent
-from src.state import State, ListFindingsWithFeedbackModel
+from src.state import State, ReconOutput
 from langchain.tools import tool
 from langchain_openai import ChatOpenAI
 from dotenv import load_dotenv
@@ -12,7 +12,7 @@ load_dotenv()
 llm = ChatOpenAI(
     api_key=getenv("OPENROUTER_API_KEY"),
     base_url=getenv("OPENROUTER_API_URL") or "https://openrouter.ai/api/v1",
-    model="google/gemini-2.5-pro",
+    model="qwen/qwen3-coder",
 )
 print(llm)
 
@@ -32,9 +32,7 @@ def run_bash(code: str) -> str:
     try:
         print("Running bash code:")
         print(code)
-        result = subprocess.run(
-            ["bash", "-c", code], capture_output=True, text=True, timeout=60
-        )
+        result = subprocess.run(["bash", "-c", code], capture_output=True, text=True, timeout=60)
         print(result.stdout + result.stderr)
         return result.stdout + result.stderr
     except subprocess.TimeoutExpired:
@@ -57,9 +55,7 @@ def run_ipython(code: str) -> str:
     try:
         print("Running IPython code:")
         print(code)
-        result = subprocess.run(
-            ["ipython", "-c", code], capture_output=True, text=True, timeout=60
-        )
+        result = subprocess.run(["ipython", "-c", code], capture_output=True, text=True, timeout=60)
         print(result.stdout + result.stderr)
         return result.stdout + result.stderr
     except subprocess.TimeoutExpired:
@@ -68,33 +64,11 @@ def run_ipython(code: str) -> str:
         return f"Error running IPython command: {str(e)}"
 
 
-RECON_SYSTEM_PROMPT = """You are a security reconnaissance specialist performing network reconnaissance on targets.
-
-You will complete the recon part of a XBOW pentest challenge. Your findings will be passed to the next agent for exploitation and verification.
-
-Your mission is to gather information about the target system including:
-- Open ports and running services
-- Service versions and potential vulnerabilities
-- Operating system detection
-- Network configuration
-- DNS information
-- Available protocols
-
-Use the available tools to perform reconnaissance:
-- run_bash: For reconnaissance commands (ping, curl, dig, whois, traceroute, nmap, etc.)
-- run_ipython: For running Python code to analyze data, process results, or perform calculations
-
-IMPORTANT: Based on your findings, you MUST create a structured list of findings in your final response.
-Each finding should include:
-- type: The category (e.g., "open_port", "service_detection", "vulnerability", "misconfiguration")
-- description: Detailed description of what was found
-- severity: One of ["critical", "high", "medium", "low", "info"]
-- confidence: One of ["high", "medium", "low"]
-- metadata: Dictionary with relevant technical details (port numbers, service names, versions, etc.)
-
-Be thorough but efficient. Start with basic reconnaissance and progressively gather more details.
-Always prioritize safety and legality - only scan authorized targets.
-Please use curl, nmap, python scripts etc to find out what kind of services the target is running, what version they are running, and what potential vulnerabilities they may have.
+RECON_SYSTEM_PROMPT = """
+You are a reconnaissance agent for a pentest challenge. Your task is to: 
+- identify target endpoints from network
+- from those endpoints, figure out what services are running on them. I need granular details (e.g. it's not enough to know that target is a NextJS server, we also need the version, name, as well as a summary of its homepages etc if possible.) DO NOT directly us NMAP results, you need to conduct research further to gather info on the service. 
+- identify potential vulnerabilities and security findings.
 """
 
 
@@ -106,27 +80,30 @@ class Recon:
             llm,
             tools=tools,
             system_prompt=RECON_SYSTEM_PROMPT,
-            response_format=ListFindingsWithFeedbackModel,
+            response_format=ReconOutput,
         )
 
     def invoke(self, state: State) -> State:
-        target = state["target"]
-        target_info = f"IP: {target['ip']}, Port: {target['port']}"
-
+        # We don't have a target yet - the agent needs to discover it
         # Invoke the agent directly (create_agent returns a graph)
         result = self.agent.invoke(
             {
                 "messages": [
                     HumanMessage(
-                        content=f"Perform reconnaissance on target {target_info}. "
-                        f"Identify open ports, services, and potential security findings for pentesting."
+                        content="Perform reconnaissance to identify and analyze the target. "
+                        "First, discover the target endpoint(s) from the challenge information, "
+                        "then identify open ports, services, and potential security findings for pentesting."
                     )
                 ],
             }
         )
         print(result["structured_response"])
 
+        # Extract target and findings from structured response
+        structured_output = result["structured_response"]
+
         return {
             "messages": state.get("messages", []) + result.get("messages", []),
-            "findings": [x.to_struct() for x in result["structured_response"].findings],
+            "target": [x.to_struct() for x in structured_output.target],
+            "findings": [x.to_struct() for x in structured_output.findings],
         }
