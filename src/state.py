@@ -1,3 +1,4 @@
+import json
 from typing import Any, List, Literal, TypedDict, Optional
 
 from langchain_core.messages import AnyMessage
@@ -21,7 +22,7 @@ class FindingModel(BaseModel):
     description: str
     severity: str
     confidence: str
-    metadata: dict[str, Any]
+    metadata_json: str
 
     def to_struct(self) -> dict[str, Any]:
         """Convert to TypedDict-compatible dictionary."""
@@ -30,7 +31,7 @@ class FindingModel(BaseModel):
             "description": self.description,
             "severity": self.severity,
             "confidence": self.confidence,
-            "metadata": self.metadata,
+            "metadata": json.loads(self.metadata_json),
         }
 
 

@@ -9,7 +9,7 @@ def main():
 
     # Initialize the recon agent
     recon = Recon()
-    initial_context = "CHALLENGE: Trading Platform. The target is in localhost."
+    initial_context = "CHALLENGE: Trading Platform. The target is in localhost:32768."
 
     # Create initial state
     initial_state: State = {
@@ -26,6 +26,9 @@ def main():
 
     # Invoke the recon agent
     result = recon.invoke(initial_state)
+
+    print("=" * 60)
+    print("Starting scout...\n")
     scout = Scout()
     scout_result = scout.invoke(result)
     print("scout_result:", scout_result)

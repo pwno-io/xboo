@@ -12,7 +12,7 @@ load_dotenv()
 llm = ChatOpenAI(
     api_key=getenv("OPENROUTER_API_KEY"),
     base_url=getenv("OPENROUTER_API_URL") or "https://openrouter.ai/api/v1",
-    model="qwen/qwen3-coder",
+    model="google/gemini-2.5-pro",
 )
 print(llm)
 
@@ -68,7 +68,7 @@ RECON_SYSTEM_PROMPT = """
 You are a reconnaissance agent for a pentest challenge. Your task is to: 
 - identify target endpoints from network
 - from those endpoints, figure out what services are running on them. I need granular details (e.g. it's not enough to know that target is a NextJS server, we also need the version, name, as well as a summary of its homepages etc if possible.) DO NOT directly us NMAP results, you need to conduct research further to gather info on the service. 
-- identify potential vulnerabilities and security findings.
+- return detailed information about the target and the services running on it.
 """
 
 
@@ -86,17 +86,14 @@ class Recon:
     def invoke(self, state: State) -> State:
         # We don't have a target yet - the agent needs to discover it
         # Invoke the agent directly (create_agent returns a graph)
-        result = self.agent.invoke(
-            {
-                "messages": [
-                    HumanMessage(
-                        content="Perform reconnaissance to identify and analyze the target. "
-                        "First, discover the target endpoint(s) from the challenge information, "
-                        "then identify open ports, services, and potential security findings for pentesting."
-                    )
-                ],
-            }
-        )
+        messages = state.get("messages", []) + [
+            HumanMessage(
+                content="Perform reconnaissance to identify and analyze the target. "
+                "First, discover the target endpoint(s) from the challenge information, "
+                "then identify open ports, services, and potential security findings for pentesting."
+            )
+        ]
+        result = self.agent.invoke({"messages": messages})
         print(result["structured_response"])
 
         # Extract target and findings from structured response
