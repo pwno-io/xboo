@@ -23,17 +23,61 @@ By default, it's set up with a basic set of tools, but can be easily extended wi
 
 ## Getting Started
 
+### Prerequisites
+
+This project uses [uv](https://docs.astral.sh/uv/) for fast, reliable Python package management. Install it with:
+
+```bash
+# macOS and Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Windows
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+
+# Or via pip
+pip install uv
+```
+
+### Setup
+
 Assuming you have already [installed LangGraph Studio](https://github.com/langchain-ai/langgraph-studio?tab=readme-ov-file#download), to set up:
 
-1. Create a `.env` file.
+1. Install dependencies:
+
+```bash
+uv sync
+```
+
+2. Create a `.env` file:
 
 ```bash
 cp .env.example .env
 ```
 
-2. Define required API keys in your `.env` file.
+3. Configure your API keys in the `.env` file:
 
-The primary [search tool](./src/react_agent/tools.py) [^1] used is [Tavily](https://tavily.com/). Create an API key [here](https://app.tavily.com/sign-in).
+**For Moonshot AI (Kimi) - Default:**
+```bash
+MOONSHOT_API_KEY=your_moonshot_api_key_here
+MOONSHOT_BASE_URL=https://api.moonshot.cn/v1
+MOONSHOT_MODEL=kimi-k2-thinking
+```
+
+Get your API key from: https://platform.moonshot.cn/console/api-keys
+
+Other available models:
+```bash
+# MOONSHOT_MODEL=moonshot-v1-8k
+# MOONSHOT_MODEL=moonshot-v1-32k
+# MOONSHOT_MODEL=moonshot-v1-128k
+```
+
+**For OpenAI - Alternative:**
+```bash
+OPENAI_API_KEY=your_openai_api_key_here
+OPENAI_BASE_URL=https://api.openai.com/v1
+OPENAI_MODEL=gpt-4
+```
 
 ### Setup Model
 
@@ -80,6 +124,39 @@ You can also quickly extend this template by:
 - Adjusting the ReAct loop or adding additional steps to the agent's decision-making process.
 
 ## Development
+
+### Running Commands
+
+This project uses `uv` for all Python commands. The Makefile has been configured to use `uv run`:
+
+```bash
+# Run tests
+make test
+
+# Run linting
+make lint
+
+# Format code
+make format
+
+# Install/sync dependencies
+make install
+```
+
+You can also run commands directly with `uv`:
+
+```bash
+# Run Python scripts
+uv run python main.py
+
+# Run pytest
+uv run pytest
+
+# Run any installed tool
+uv run ruff check .
+```
+
+### Working with the Graph
 
 While iterating on your graph, you can edit past state and rerun your app from past states to debug specific nodes. Local changes will be automatically applied via hot reload. Try adding an interrupt before the agent calls tools, updating the default system message in `src/react_agent/context.py` to take on a persona, or adding additional nodes and edges!
 

@@ -1,5 +1,13 @@
-from typing import TypedDict
+from typing import TypedDict, Literal
 from langchain_core.messages import AnyMessage
+
+class GraphNode:
+    """Graph node identifiers for agent routing."""
+    RECON = "recon"
+    SCOUT = "scout"
+    END = "__end__"
+
+GraphNodeType = Literal["recon", "scout", "__end__"]
 
 class Finding(TypedDict):
     type: str
