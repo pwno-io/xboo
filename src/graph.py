@@ -13,17 +13,10 @@ def build_graph():
         StateGraph(State)
         .add_node("recon", recon.invoke)
         .add_node("scout", scout.invoke)
+        .add_node("router", router.route)
 
         .set_entry_point("recon")
         .add_edge("recon", "scout")
-        .add_conditional_edges(
-            "scout",
-            router.route,
-            {
-                "recon": "recon",
-                "scout": "scout",
-                "end": END,
-            }
+        .add_edge("scout", "router")
         )
-    )
     return graph.compile()

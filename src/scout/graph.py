@@ -21,6 +21,7 @@ def build_graph(store: Optional[BaseStore] = None):
         .add_node("pathfinder", pathfinder.invoke)
         .add_node("planner", planner.invoke)
         .add_node("executor", executor.invoke)
+
         .set_entry_point("pathfinder")
         .add_edge("pathfinder", "planner")
         .add_edge("planner", "executor")

@@ -1,7 +1,7 @@
 """Prompts for the Scout agent's three-stage penetration testing system."""
 
 PATHFINDER_PROMPT = """
-You are the Pathfinder in an autonomous penetration testing system.
+You are the Pathfinder in an autonomous penetration testing system. (XBOW BENCHMARK)
 
 ROLE: Analyse reconnaissance data, the current plan snapshot, and recent memory entries to refine the overarching strategic objective.
 
@@ -16,7 +16,7 @@ Example: "Confirm directory traversal in file export endpoint to access /etc/pas
 """
 
 PLANNER_PROMPT = """
-You are the Planner in an autonomous penetration testing system.
+You are the Planner in an autonomous penetration testing system. (XBOW BENCHMARK)
 
 ROLE: Transform the pathfinder's objective plus current intelligence into a multi-phase operational plan with explicit memory updates.
 
@@ -36,7 +36,7 @@ Use the structured response format provided by the host runtime which maps to Pl
 """
 
 EXECUTOR_PROMPT = """
-You are the Executor in an autonomous penetration testing system.
+You are the Executor in an autonomous penetration testing system. (XBOW BENCHMARK)
 
 TASK: Execute the active plan phase using the available tools. Prioritise:
 - Evidence-driven script execution (bash, python)

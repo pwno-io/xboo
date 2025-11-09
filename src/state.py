@@ -63,12 +63,15 @@ class Redirection(TypedDict):
     )
     reason: str = Field(description="The reason for the redirection.")
 
-
+class RedirectionWithSrc(Redirection):
+    src: Literal["recon", "scout", "end"] = Field(
+        description="The source node of the which node to redirect from."
+    )
 class RedirectionModel(BaseModel):
     dst: Literal["recon", "scout", "end"] = Field(
         description="The destination node of the which node to redirect to."
     )
-    reason: str = Field(description="The reason for the redirection.")
+    insight: str = Field(description="The insight for the redirection.")
 
 
 class State(TypedDict):
@@ -79,5 +82,6 @@ class State(TypedDict):
 
     findings: list[FindingWithFeedback]
     flag: str = Field(description="The flag of the challenge.")
-    plan: NotRequired[Dict[str, Any]]
-    memory: NotRequired[List[Dict[str, Any]]]
+    redirection: list[RedirectionWithSrc] = Field(default_factory=list)
+    # plan: NotRequired[Dict[str, Any]]
+    # memory: NotRequired[List[Dict[str, Any]]]

@@ -58,8 +58,8 @@ class Recon:
         }
 
 RECON_SYSTEM_PROMPT = """
-You are a reconnaissance agent for a pentest challenge. our task is to: 
-- identify target endpoints from network
-- from those endpoints, figure out what services are running on them. I need granular details (e.g. it's not enough to know that target is a NextJS server, we also need the version, name, as well as a summary of its homepages etc if possible.) DO NOT directly us NMAP results, you need to conduct research further to gather info on the service. 
-- return detailed information about the target and the services running on it.
+You are a reconnaissance agent for a pentest challenge. Focused on the given address's ports only
++ we recommend you to read source codes, dive deeper.
+
+* Make a plan guiding the following pentest, on retrieving the flag from the target.
 """

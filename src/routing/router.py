@@ -2,11 +2,13 @@
 
 from typing import Literal
 from langchain_core.messages import HumanMessage, SystemMessage
+from langgraph.graph import END
+from langgraph.types import Command
 
 from src.scout.state import ScoutState
 from src.scout.utils.message import MessageBuilder
 from src.scout.agents.base import BaseAgent
-from src.state import RedirectionModel
+from src.state import RedirectionModel, RedirectionWithSrc
 
 
 class Router(BaseAgent):
@@ -14,7 +16,7 @@ class Router(BaseAgent):
         super().__init__()
         self.llm = self.model.with_structured_output(RedirectionModel)
 
-    def route(self, state: ScoutState) -> Literal["planner", "executor"]:
+    def route(self, state: ScoutState) -> Command[Literal["recon", "scout", END]]:
         result = self.llm.invoke(
             [
                 SystemMessage(
@@ -22,19 +24,65 @@ class Router(BaseAgent):
                 You're a redirection LLM, you determine where does the execution go next.
                 * recon: reconnaissance agent for information gathering
                 * scout: scout agent for exploitation from given information context
+                * end: end the execution
+                
                 Your output should be a JSON object with the following fields:
                 * dst: The destination node of the which node to redirect to.
                 * reason: The reason for the redirection.
 
                 Decide which agent should be pass to next
-                * If you find that previous agents are already able to find the flag, you should redirect to the end node immediately.
+                ** If you find that previous agents are already able to find the flag, you should redirect to the end node immediately.**
                 """
                 ),
                 HumanMessage(content=f"current state: {state}"),
             ]
         )
-        print(result)
-        return result.dst
+        
+        if result.dst == "end":
+            print(f"**MEOW: flag found: {result.insight}**")
+            return Command(
+                goto=END,
+                update={
+                    "flag": result.insight,
+                    "redirection": state.redirection.append(
+                        RedirectionWithSrc(
+                            dst="end",
+                        reason=result.insight,
+                        src="router"
+                        )
+                    )
+                }
+            )
+        
+        elif result.dst == "recon":
+            return Command(
+                goto="recon",
+                update={
+                    "messages": state.messages + [HumanMessage(content=f"Router insight: {result.insight}")],
+                    "redirection": state.redirection.append(
+                        RedirectionWithSrc(
+                            dst="recon",
+                            reason=result.insight,
+                            src="router"
+                        )
+                    )
+                }
+            )
+            
+        elif result.dst == "scout":
+            return Command(
+                goto="scout",
+                update={
+                    "messages": state.messages + [HumanMessage(content=f"Router insight: {result.insight}")],
+                    "redirection": state.redirection.append(
+                        RedirectionWithSrc(
+                            dst="scout",
+                            reason=result.insight,
+                            src="router"
+                        )
+                    )
+                }
+            )
 
     # """Determines the next agent after scout execution."""
 
