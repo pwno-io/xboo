@@ -14,8 +14,7 @@ class Router(BaseAgent):
         self.llm = self.model.with_structured_output(Redirection)
 
     def route(self, state: ScoutState) -> Literal["planner", "executor"]:
-        result = self.llm.invoke({
-            "messages": [
+        result = self.llm.invoke([
                 SystemMessage(content="""
                 You're a redirection LLM, you determine where does the execution go next.
                 * recon: reconnaissance agent for information gathering
@@ -25,8 +24,7 @@ class Router(BaseAgent):
                 * If you find that previous agents are already able to find the flag, you should redirect to the end node immediately.
                 """),
                 HumanMessage(content=f"current state: {state}")
-            ]
-        })
+            ])
         return result.dst
 
 

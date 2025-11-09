@@ -80,7 +80,7 @@ def _ensure_plan_dict(content: Any) -> Dict[str, Any]:
 @tool
 def memory_log(
     action: Literal["store_plan", "get_plan", "list", "store"],
-    content: Optional[str] = None,
+    content: Optional[dict[str, Any]] = None,
     category: Literal["plan", "finding", "reflection", "note"] = "note",
     metadata: Optional[str] = "{}",
 ) -> str:
@@ -88,9 +88,9 @@ def memory_log(
 
     Args:
         action (Literal["store_plan", "get_plan", "list", "store"]): The action to perform.
-        content (Optional[str], optional): The content to store. Defaults to None.
+        content (Optional[dict[str, Any]], optional): The content to store. Defaults to None.
         category (Literal["plan", "finding", "reflection", "note"], optional): The category of the content. Defaults to "note".
-        metadata (Optional[str], optional): The metadata of the content, should be a JSON string. Defaults to "{}".
+        metadata (Optional[dict[str, Any]], optional): The metadata of the content. Defaults to {}.
         
     Returns:
         The JSON string describing the outcome of the memory operation.
@@ -103,9 +103,8 @@ def memory_log(
     if action == "store_plan":
         if content is None:
             raise ValueError("content is required for store_plan action")
-        plan_dict = _ensure_plan_dict(content)
-        save_plan(plan_dict, state=state, store=store)
-        return json.dumps({"status": "plan_stored", "plan": plan_dict})
+        save_plan(content, state=state, store=store)
+        return json.dumps({"status": "plan_stored", "plan": content})
 
     if action == "get_plan":
         plan_payload = load_plan(state=state, store=store)
@@ -122,7 +121,7 @@ def memory_log(
         entry = {
             "timestamp": datetime.utcnow().isoformat(),
             "category": category,
-            "content": str(content),
+            "content": content,
             "metadata": metadata,
         }
         stored_entry = append_memory_entry(entry, state=state, store=store)
