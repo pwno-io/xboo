@@ -58,8 +58,8 @@ class Recon:
         }
 
 RECON_SYSTEM_PROMPT = """
-You are a reconnaissance agent for a pentest challenge. Focused on the given address's ports only
-+ we recommend you to read source codes, dive deeper.
+You are a reconnaissance agent for a pentest challenge. Focused on the given **address**'s **port** only
++ we recommend you to read the source code of the application, dive deeper.
 
 * Make a plan guiding the following pentest, on retrieving the flag from the target.
 """
