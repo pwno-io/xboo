@@ -18,16 +18,6 @@ def get_execution_timeout() -> int:
     """Get execution timeout from environment or use default."""
     return int(os.getenv("SCOUT_EXECUTION_TIMEOUT", "30"))
 
-
-def _sanitize_metadata(metadata: Optional[Dict[str, Any]]) -> Dict[str, str]:
-    if not metadata:
-        return {}
-    clean: Dict[str, str] = {}
-    for key, value in metadata.items():
-        clean[str(key)] = str(value)
-    return clean
-
-
 #@JettChenT's tool
 @tool
 def run_bash(code: str) -> str:
@@ -133,7 +123,7 @@ def memory_log(
             "timestamp": datetime.utcnow().isoformat(),
             "category": category,
             "content": str(content),
-            "metadata": _sanitize_metadata(metadata),
+            "metadata": metadata,
         }
         stored_entry = append_memory_entry(entry, state=state, store=store)
         return json.dumps({"status": "stored", "entry": stored_entry})

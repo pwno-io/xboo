@@ -78,21 +78,17 @@ class MessageBuilder:
         memory_lines = MessageBuilder._memory_to_lines(memory)
         memory_summary = "\n".join(memory_lines)
 
-        return f"""<context>
-    <targets>
+        return f"""CONTEXT:
+Target(s):
 {target_str}
-    </targets>
-    
-    <reconnaissance_findings>
+
+Reconnaissance Findings:
 {findings_summary if findings_summary else 'No findings yet'}
-    </reconnaissance_findings>
-    
-    <recent_memory>
+
+Recent Memory Highlights:
 {memory_summary}
-    </recent_memory>
-    
-    <instruction>Based on these signals, focus the objective on the most impactful path forward.</instruction>
-</context>"""
+
+Based on these signals, focus the objective on the most impactful path forward."""
 
     @staticmethod
     def build_planner_message(state: ScoutState) -> str:
@@ -120,35 +116,23 @@ class MessageBuilder:
         findings_text = findings_summary if findings_summary else "No findings yet"
         objective = state.objective if hasattr(state, 'objective') else 'Unspecified objective'
 
-        return f"""<planning_context>
-    <strategic_objective>{objective}</strategic_objective>
-    
-    <current_targets>{target_str}</current_targets>
-    
-    <known_findings>
+        return f"""STRATEGIC OBJECTIVE: {objective}
+CURRENT TARGETS: {target_str}
+KNOWN FINDINGS:
 {findings_text}
-    </known_findings>
-    
-    <current_plan>
+
+CURRENT PLAN SNAPSHOT:
 {plan_summary}
-    </current_plan>
-    
-    <recent_memory>
+
+RECENT MEMORY HIGHLIGHTS:
 {memory_summary}
-    </recent_memory>
-    
-    <instructions>
-        <task>Develop a refreshed multi-phase plan (1-4 phases) with clear exit criteria.</task>
-        <response_format>
-            <required_fields>
-                <field>plan.current_phase</field>
-                <field>plan.total_phases</field>
-                <field>plan.phases[] with title, status, criteria, optional notes</field>
-                <field>memory[] entries capturing critical insights or follow-up tasks</field>
-            </required_fields>
-        </response_format>
-    </instructions>
-</planning_context>"""
+
+Develop a refreshed multi-phase plan (1-4 phases) with clear exit criteria. Use the structured response format to provide:
+- plan.current_phase
+- plan.total_phases
+- plan.phases[] with title, status, criteria, optional notes
+- memory[] entries capturing critical insights or follow-up tasks.
+"""
 
     @staticmethod
     def build_executor_message(state: ScoutState) -> str:
@@ -169,21 +153,15 @@ class MessageBuilder:
         
         objective = state.objective if hasattr(state, 'objective') else 'Unspecified objective'
 
-        return f"""<execution_context>
-    <strategic_objective>{objective}</strategic_objective>
-    
-    <active_plan>
+        return f"""STRATEGIC OBJECTIVE: {objective}
+
+ACTIVE PLAN:
 {plan_summary}
-    </active_plan>
-    
-    <recent_memory>
+
+RECENT MEMORY HIGHLIGHTS:
 {memory_summary}
-    </recent_memory>
-    
-    <targets>{target_str}</targets>
-    
-    <instructions>
-        <task>Execute the next phase in the plan using the available tools.</task>
-        <guidance>When generating evidence or insights, call the memory tool to persist entries.</guidance>
-    </instructions>
-</execution_context>"""
+
+TARGET(S): {target_str}
+
+Execute the next phase in the plan using the available tools. When generating evidence or insights, call the memory tool to persist entries.
+"""
