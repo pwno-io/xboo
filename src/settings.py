@@ -1,7 +1,16 @@
+from typing import Optional
 from pydantic import Field, AliasChoices
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
+    
+    langsmith_api_key: Optional[str] = Field(None, validation_alias="LANGSMITH_API_KEY")
+    
+    # For local tracing
+    langsmith_endpoint: Optional[str] = Field(None, validation_alias="LANGSMITH_ENDPOINT")
+    langsmith_project: Optional[str] = Field(None, validation_alias="LANGSMITH_PROJECT")
+    langsmith_tracing: Optional[bool] = Field(None, validation_alias="LANGSMITH_TRACING")
+
     API_KEY: str = Field(default=..., validation_alias=AliasChoices("API_KEY", "SCOUT_API_KEY", "MOONSHOT_API_KEY", "OPENAI_API_KEY"))
     API_BASE: str = Field(default=..., validation_alias=AliasChoices("API_BASE", "SCOUT_API_BASE", "MOONSHOT_API_BASE", "OPENAI_API_BASE"))
     MODEL: str = Field(default=..., validation_alias=AliasChoices("MODEL", "SCOUT_MODEL", "MOONSHOT_MODEL", "OPENAI_MODEL"))
