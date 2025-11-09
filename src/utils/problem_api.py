@@ -3,7 +3,7 @@ from typing import List, Optional
 import httpx
 from pydantic import BaseModel
 
-from .config import Config
+from src.settings import settings
 
 
 # Response Models
@@ -49,15 +49,14 @@ class ErrorResponse(BaseModel):
 
 # API Client
 class ProblemAPIClient:
-    def __init__(self, config: Optional[Config] = None):
+    def __init__(self):
         """Initialize the API client with configuration.
 
         Args:
             config: Optional Config object. If None, will load from environment.
         """
-        self.config = config or Config()
-        self.base_url = self.config.API_BASE_URL
-        self.api_key = self.config.API_KEY
+        self.base_url = settings.CHALLENGE_API_BASE
+        self.api_key = settings.CHALLENGE_API_KEY
         self.client: Optional[httpx.AsyncClient] = None
 
     async def __aenter__(self):
