@@ -30,8 +30,8 @@ def _first_target(state: Mapping[str, Any] | None) -> str:
         ip = primary.get("ip", "unknown")
         port = primary.get("port")
     if port is None:
-        return f"{ip}"
-    return f"{ip}:{port}"
+        return f"{ip.replace('.', '-')}"
+    return f"{ip.replace('.', '-')}:{port}"
 
 
 def memory_namespace(state: Mapping[str, Any] | None, scope: str) -> Namespace:

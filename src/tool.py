@@ -94,7 +94,17 @@ def memory_log(
     category: Literal["plan", "finding", "reflection", "note"] = "note",
     metadata: Optional[Dict[str, Any]] = None,
 ) -> str:
+    """Memory log tool for LangGraph.
 
+    Args:
+        action (Literal["store_plan", "get_plan", "list", "store"]): The action to perform.
+        content (Optional[str], optional): The content to store. Defaults to None.
+        category (Literal["plan", "finding", "reflection", "note"], optional): The category of the content. Defaults to "note".
+        metadata (Optional[Dict[str, Any]], optional): The metadata of the content. Defaults to None.
+        
+    Returns:
+        The JSON string describing the outcome of the memory operation.
+    """
     store = get_current_store(optional=True)
     state = get_current_state(optional=True)
     if store is None:
