@@ -4,7 +4,7 @@ import json
 import os
 import subprocess
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Literal, Optional
 
 from langchain_core.tools import tool
 
@@ -89,44 +89,39 @@ def _ensure_plan_dict(content: Any) -> Dict[str, Any]:
 
 @tool
 def memory_log(
-    action: str,
+    action: Literal["store_plan", "get_plan", "list", "store"],
     content: Optional[Any] = None,
-    category: str = "note",
+    category: Literal["plan", "finding", "reflection", "note"] = "note",
     metadata: Optional[Dict[str, Any]] = None,
 ) -> str:
-    """Manage the scout memory store (actions: store, store_plan, get_plan, list)."""
 
     store = get_current_store(optional=True)
     state = get_current_state(optional=True)
     if store is None:
         return json.dumps({"status": "store_unavailable"})
 
-    normalized_action = action.lower().strip()
-
-    if normalized_action == "store_plan":
+    if action == "store_plan":
         if content is None:
             raise ValueError("content is required for store_plan action")
         plan_dict = _ensure_plan_dict(content)
         save_plan(plan_dict, state=state, store=store)
         return json.dumps({"status": "plan_stored", "plan": plan_dict})
 
-    if normalized_action == "get_plan":
+    if action == "get_plan":
         plan_payload = load_plan(state=state, store=store)
         return json.dumps({"status": "ok", "plan": plan_payload})
 
-    if normalized_action == "list":
+    if action == "list":
         entries = list_memory_entries(state=state, store=store)
         return json.dumps({"status": "ok", "entries": entries})
 
-    if normalized_action == "store":
+    if action == "store":
         if not content:
             raise ValueError("content is required for store action")
-        normalized_category = category.lower().strip() if category else "note"
-        if normalized_category not in ALLOWED_MEMORY_CATEGORIES:
-            normalized_category = "note"
+
         entry = {
             "timestamp": datetime.utcnow().isoformat(),
-            "category": normalized_category,
+            "category": category,
             "content": str(content),
             "metadata": _sanitize_metadata(metadata),
         }
