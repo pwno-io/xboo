@@ -32,7 +32,7 @@ jobs:
     name: Validation Benchmark
     runs-on: ubuntu-latest
     # Only run when API key secrets are available
-    if: ${{ secrets.API_KEY != '' }}
+    if: ${{ env.API_KEY != '' }}
     env:
       # Prefer SCOUT_*; fall back to OPENROUTER_* for recon
       API_KEY: ${{ secrets.API_KEY }}
