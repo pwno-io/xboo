@@ -47,6 +47,7 @@ class Recon:
             "messages": state.get("messages", []) + result.get("messages", []),
             "target": state.get("target", []),
 
+            "recon": structured_output.report,
             "findings": structured_output.findings,
         }
 

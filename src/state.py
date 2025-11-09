@@ -55,7 +55,7 @@ class State(TypedDict):
     messages: list[AnyMessage]
 
     target: list[Target]
-    report: str
+    recon: str
 
     findings: list[FindingWithFeedback]
     flag: str = Field(description="The flag of the challenge.")
