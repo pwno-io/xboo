@@ -63,7 +63,9 @@ def _coerce_metadata(metadata: Any) -> Dict[str, Any]:
     raise ValueError("metadata must be a dict or JSON string representing a dict")
 
 
-def _dedupe_memories(initial: Iterable[Dict[str, Any]], fresh: Iterable[Dict[str, Any]]) -> list[Dict[str, Any]]:
+def _dedupe_memories(
+    initial: Iterable[Dict[str, Any]], fresh: Iterable[Dict[str, Any]]
+) -> list[Dict[str, Any]]:
     combined: list[Dict[str, Any]] = []
     seen: set[str] = set()
     for entry in list(initial) + list(fresh):
@@ -122,9 +124,8 @@ def get_plan(
     store = runtime.store
     if store is not None:
         namespace = memory_namespace(state, "plan")
-        items = store.get(namespace, "active")
-        if items:
-            item = items[0]
+        item = store.get(namespace, "active")
+        if item:
             value = getattr(item, "value", item)
             if isinstance(value, dict) and "plan" in value:
                 return json.dumps({"status": "ok", "plan": value["plan"]})

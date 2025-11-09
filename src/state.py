@@ -64,6 +64,13 @@ class Redirection(TypedDict):
     reason: str = Field(description="The reason for the redirection.")
 
 
+class RedirectionModel(BaseModel):
+    dst: Literal["recon", "scout", "end"] = Field(
+        description="The destination node of the which node to redirect to."
+    )
+    reason: str = Field(description="The reason for the redirection.")
+
+
 class State(TypedDict):
     messages: list[AnyMessage]
 

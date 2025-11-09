@@ -6,13 +6,13 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from src.scout.state import ScoutState
 from src.scout.utils.message import MessageBuilder
 from src.scout.agents.base import BaseAgent
-from src.state import Redirection
+from src.state import RedirectionModel
 
 
 class Router(BaseAgent):
     def __init__(self):
         super().__init__()
-        self.llm = self.model.with_structured_output(Redirection)
+        self.llm = self.model.with_structured_output(RedirectionModel)
 
     def route(self, state: ScoutState) -> Literal["planner", "executor"]:
         result = self.llm.invoke(
@@ -22,6 +22,9 @@ class Router(BaseAgent):
                 You're a redirection LLM, you determine where does the execution go next.
                 * recon: reconnaissance agent for information gathering
                 * scout: scout agent for exploitation from given information context
+                Your output should be a JSON object with the following fields:
+                * dst: The destination node of the which node to redirect to.
+                * reason: The reason for the redirection.
 
                 Decide which agent should be pass to next
                 * If you find that previous agents are already able to find the flag, you should redirect to the end node immediately.
@@ -30,7 +33,8 @@ class Router(BaseAgent):
                 HumanMessage(content=f"current state: {state}"),
             ]
         )
-        return result["structured_response"].dst
+        print(result)
+        return result.dst
 
     # """Determines the next agent after scout execution."""
 
