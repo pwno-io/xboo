@@ -10,7 +10,14 @@ from src.memory.context import memory_context
 from src.scout.utils.message import MessageBuilder
 
 from ..prompt import EXECUTOR_PROMPT
-from src.tool import memory_log, run_bash, run_ipython
+from src.tool import (
+    get_plan,
+    list_memories,
+    run_bash,
+    run_ipython,
+    store_memory,
+    store_plan,
+)
 from src.scout.agents.base import BaseAgent
 from src.scout.state import ScoutState
 from src.state import State
@@ -23,7 +30,7 @@ class Executor(BaseAgent):
         super().__init__()
         self.agent = create_agent(
             self.model,
-            tools=[run_bash, run_ipython, memory_log],
+            tools=[run_bash, run_ipython, store_plan, get_plan, list_memories, store_memory],
             system_prompt=EXECUTOR_PROMPT,
             response_format=None
         )

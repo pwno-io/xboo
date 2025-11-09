@@ -10,12 +10,12 @@ from langgraph.store.base import BaseStore
 from pydantic import ValidationError
 
 from src.memory.context import memory_context
+from src.memory.utils import save_plan
 from src.scout.agents.base import BaseAgent
 from src.scout.model import PlanResponse
 from src.scout.prompt import PLANNER_PROMPT
 from src.scout.state import ScoutState
 from src.scout.utils.message import MessageBuilder
-from src.tool import store_plan_to_memory
 
 
 class Planner(BaseAgent):
@@ -55,7 +55,7 @@ class Planner(BaseAgent):
             plan_payload["objective"] = state.objective if state.objective else ""
 
         try:
-            store_plan_to_memory(plan_payload, state)
+            save_plan(plan_payload, state=state, store=store)
         except ValueError:
             # Gracefully degrade if persistence fails (e.g., invalid payload)
             pass

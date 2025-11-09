@@ -1,17 +1,22 @@
 """LangGraph-aware tools for scout agents."""
 
-import json
 import os
 import subprocess
-from datetime import datetime
-from typing import Any, Dict, Literal, Optional
 
 from langchain_core.tools import tool
 
-from src.memory.context import get_current_state, get_current_store
-from src.memory.utils import append_memory_entry, list_memory_entries, load_plan, save_plan
+from src.memory.tools import get_plan, list_memories, store_memory, store_plan
+from src.memory.utils import save_plan
 
-ALLOWED_MEMORY_CATEGORIES = {"plan", "finding", "reflection", "note"}
+__all__ = [
+    "get_plan",
+    "list_memories",
+    "run_bash",
+    "run_ipython",
+    "save_plan",
+    "store_memory",
+    "store_plan",
+]
 
 
 def get_execution_timeout() -> int:
@@ -64,72 +69,3 @@ def run_ipython(code: str) -> str:
         return "Command timed out after 60 seconds"
     except Exception as e:  # pylint: disable=broad-except
         return f"Error running IPython command: {str(e)}"
-
-
-def _ensure_plan_dict(content: Any) -> Dict[str, Any]:
-    if isinstance(content, dict):
-        return content
-    if isinstance(content, str):
-        try:
-            return json.loads(content)
-        except json.JSONDecodeError as exc:  # pragma: no cover - defensive
-            raise ValueError("content must be valid JSON when storing a plan") from exc
-    raise ValueError("content must be a dict or JSON string when storing a plan")
-
-
-@tool
-def memory_log(
-    action: Literal["store_plan", "get_plan", "list", "store"],
-    content: Optional[dict[str, Any]] = None,
-    category: Literal["plan", "finding", "reflection", "note"] = "note",
-    metadata: Optional[str] = "{}",
-) -> str:
-    """Memory log tool for LangGraph.
-
-    Args:
-        action (Literal["store_plan", "get_plan", "list", "store"]): The action to perform.
-        content (Optional[dict[str, Any]], optional): The content to store. Defaults to None.
-        category (Literal["plan", "finding", "reflection", "note"], optional): The category of the content. Defaults to "note".
-        metadata (Optional[dict[str, Any]], optional): The metadata of the content. Defaults to {}.
-        
-    Returns:
-        The JSON string describing the outcome of the memory operation.
-    """
-    store = get_current_store(optional=True)
-    state = get_current_state(optional=True)
-    if store is None:
-        return json.dumps({"status": "store_unavailable"})
-
-    if action == "store_plan":
-        if content is None:
-            raise ValueError("content is required for store_plan action")
-        save_plan(content, state=state, store=store)
-        return json.dumps({"status": "plan_stored", "plan": content})
-
-    if action == "get_plan":
-        plan_payload = load_plan(state=state, store=store)
-        return json.dumps({"status": "ok", "plan": plan_payload})
-
-    if action == "list":
-        entries = list_memory_entries(state=state, store=store)
-        return json.dumps({"status": "ok", "entries": entries})
-
-    if action == "store":
-        if not content:
-            raise ValueError("content is required for store action")
-
-        entry = {
-            "timestamp": datetime.utcnow().isoformat(),
-            "category": category,
-            "content": content,
-            "metadata": metadata,
-        }
-        stored_entry = append_memory_entry(entry, state=state, store=store)
-        return json.dumps({"status": "stored", "entry": stored_entry})
-
-    raise ValueError(f"Unsupported memory action '{action}'.")
-
-
-def store_plan_to_memory(plan: Dict[str, Any], state: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-    """Persist the provided plan payload to the LangGraph memory store."""
-    return save_plan(plan, state=state)
