@@ -47,14 +47,14 @@ class Recon:
         return {
             # "target": state.get("target", []),
             "messages": state.get("messages", []) + result.get("messages", []),
-            # "target": state.get("target", []),
+            "target": state.get("target", []),
 
             "recon": structured_output.report,
             "findings": structured_output.findings,
-            "target": structured_output.target,
 
             "objective": "",
-            "DAG": {},
+            "plan": state.get("plan"),
+            "memory": state.get("memory", []),
         }
 
 RECON_SYSTEM_PROMPT = """

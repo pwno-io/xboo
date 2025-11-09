@@ -1,8 +1,17 @@
-"""Enhanced safe tools for Scout agent with timeouts and error handling."""
+"""LangGraph-aware tools for scout agents."""
+
+import json
+import os
+import subprocess
+from datetime import datetime
+from typing import Any, Dict, Optional
 
 from langchain_core.tools import tool
-import subprocess
-import os
+
+from src.memory.context import get_current_state, get_current_store
+from src.memory.utils import append_memory_entry, list_memory_entries, load_plan, save_plan
+
+ALLOWED_MEMORY_CATEGORIES = {"plan", "finding", "reflection", "note"}
 
 
 def get_execution_timeout() -> int:
@@ -10,66 +19,13 @@ def get_execution_timeout() -> int:
     return int(os.getenv("SCOUT_EXECUTION_TIMEOUT", "30"))
 
 
-# @sunyxedu's tool
-# @tool
-# def execution(command: str) -> str:
-#     """Execute a shell command and return its output with safety controls.
-    
-#     Args:
-#         command: The shell command to execute
-        
-#     Returns:
-#         The stdout output from the command, or error message
-#     """
-#     timeout = get_execution_timeout()
-    
-#     try:
-#         result = subprocess.run(
-#             command,
-#             shell=True,
-#             capture_output=True,
-#             text=True,
-#             timeout=timeout
-#         )
-        
-#         # Return stdout, or stderr if stdout is empty
-#         output = result.stdout if result.stdout else result.stderr
-#         return output if output else f"Command executed (exit code: {result.returncode})"
-        
-#     except subprocess.TimeoutExpired:
-#         return f"Error: Command timed out after {timeout} seconds"
-#     except Exception as e:
-#         return f"Error executing command: {str(e)}"
-
-
-# @tool
-# def python(code: str) -> str:
-#     """Execute Python code and return its output with safety controls.
-    
-#     Args:
-#         code: The Python code to execute
-        
-#     Returns:
-#         The stdout output from the Python code execution, or error message
-#     """
-#     timeout = get_execution_timeout()
-    
-#     try:
-#         result = subprocess.run(
-#             ["python", "-c", code],
-#             capture_output=True,
-#             text=True,
-#             timeout=timeout
-#         )
-        
-#         # Return stdout, or stderr if stdout is empty
-#         output = result.stdout if result.stdout else result.stderr
-#         return output if output else f"Python code executed (exit code: {result.returncode})"
-        
-#     except subprocess.TimeoutExpired:
-#         return f"Error: Python code timed out after {timeout} seconds"
-#     except Exception as e:
-#         return f"Error executing Python code: {str(e)}"
+def _sanitize_metadata(metadata: Optional[Dict[str, Any]]) -> Dict[str, str]:
+    if not metadata:
+        return {}
+    clean: Dict[str, str] = {}
+    for key, value in metadata.items():
+        clean[str(key)] = str(value)
+    return clean
 
 
 #@JettChenT's tool
@@ -93,7 +49,7 @@ def run_bash(code: str) -> str:
         return result.stdout + result.stderr
     except subprocess.TimeoutExpired:
         return "Command timed out after 60 seconds"
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-except
         return f"Error running bash command: {str(e)}"
 
 
@@ -116,5 +72,70 @@ def run_ipython(code: str) -> str:
         return result.stdout + result.stderr
     except subprocess.TimeoutExpired:
         return "Command timed out after 60 seconds"
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-except
         return f"Error running IPython command: {str(e)}"
+
+
+def _ensure_plan_dict(content: Any) -> Dict[str, Any]:
+    if isinstance(content, dict):
+        return content
+    if isinstance(content, str):
+        try:
+            return json.loads(content)
+        except json.JSONDecodeError as exc:  # pragma: no cover - defensive
+            raise ValueError("content must be valid JSON when storing a plan") from exc
+    raise ValueError("content must be a dict or JSON string when storing a plan")
+
+
+@tool
+def memory_log(
+    action: str,
+    content: Optional[Any] = None,
+    category: str = "note",
+    metadata: Optional[Dict[str, Any]] = None,
+) -> str:
+    """Manage the scout memory store (actions: store, store_plan, get_plan, list)."""
+
+    store = get_current_store(optional=True)
+    state = get_current_state(optional=True)
+    if store is None:
+        return json.dumps({"status": "store_unavailable"})
+
+    normalized_action = action.lower().strip()
+
+    if normalized_action == "store_plan":
+        if content is None:
+            raise ValueError("content is required for store_plan action")
+        plan_dict = _ensure_plan_dict(content)
+        save_plan(plan_dict, state=state, store=store)
+        return json.dumps({"status": "plan_stored", "plan": plan_dict})
+
+    if normalized_action == "get_plan":
+        plan_payload = load_plan(state=state, store=store)
+        return json.dumps({"status": "ok", "plan": plan_payload})
+
+    if normalized_action == "list":
+        entries = list_memory_entries(state=state, store=store)
+        return json.dumps({"status": "ok", "entries": entries})
+
+    if normalized_action == "store":
+        if not content:
+            raise ValueError("content is required for store action")
+        normalized_category = category.lower().strip() if category else "note"
+        if normalized_category not in ALLOWED_MEMORY_CATEGORIES:
+            normalized_category = "note"
+        entry = {
+            "timestamp": datetime.utcnow().isoformat(),
+            "category": normalized_category,
+            "content": str(content),
+            "metadata": _sanitize_metadata(metadata),
+        }
+        stored_entry = append_memory_entry(entry, state=state, store=store)
+        return json.dumps({"status": "stored", "entry": stored_entry})
+
+    raise ValueError(f"Unsupported memory action '{action}'.")
+
+
+def store_plan_to_memory(plan: Dict[str, Any], state: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """Persist the provided plan payload to the LangGraph memory store."""
+    return save_plan(plan, state=state)

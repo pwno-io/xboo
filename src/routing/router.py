@@ -13,7 +13,7 @@ class Router(BaseAgent):
         super().__init__()
         self.llm = self.model.with_structured_output(Redirection)
 
-    def route(self, state: ScoutState) -> Literal["tactician", "executor"]:
+    def route(self, state: ScoutState) -> Literal["planner", "executor"]:
         result = self.llm.invoke({
             "messages": [
                 SystemMessage(content="""

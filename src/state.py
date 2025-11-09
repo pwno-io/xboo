@@ -1,8 +1,7 @@
 import json
-from typing import Any, List, Literal, TypedDict, Optional
+from typing import Any, Dict, List, Literal, NotRequired, Optional, TypedDict
 
 from langchain_core.messages import AnyMessage
-from typing import Literal
 from pydantic import BaseModel, Field
 
 
@@ -73,3 +72,5 @@ class State(TypedDict):
 
     findings: list[FindingWithFeedback]
     flag: str = Field(description="The flag of the challenge.")
+    plan: NotRequired[Dict[str, Any]]
+    memory: NotRequired[List[Dict[str, Any]]]

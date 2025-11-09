@@ -2,22 +2,48 @@
 
 from src.scout.state import ScoutState
 from src.state import State
-from typing import List
 
 
 class MessageBuilder:
     """Builds context messages for Scout agents."""
 
     @staticmethod
-    def build_strategist_message(state: State) -> str:
-        """Build context message for strategist agent.
+    def _plan_to_lines(plan) -> list[str]:
+        if not plan:
+            return ["No active plan. Craft one now."]
+        plan_dict = plan.model_dump() if hasattr(plan, "model_dump") else plan
+        phases = plan_dict.get("phases", [])
+        if not phases:
+            return ["Plan exists but lacks phases. Provide measurable steps."]
+        lines: list[str] = []
+        for phase in phases:
+            phase_dict = phase.model_dump() if hasattr(phase, "model_dump") else phase
+            status = str(phase_dict.get("status", "pending")).upper()
+            title = phase_dict.get("title", "Untitled phase")
+            criteria = phase_dict.get("criteria", "Unspecified exit criteria")
+            lines.append(f"- [{status}] {title} :: {criteria}")
+        return lines
 
-        Args:
-            state: Current state with target and findings
+    @staticmethod
+    def _memory_to_lines(memory) -> list[str]:
+        if not memory:
+            return ["No memory captured yet."]
+        lines: list[str] = []
+        tail = memory[-3:]
+        for entry in tail:
+            entry_dict = entry.model_dump() if hasattr(entry, "model_dump") else entry
+            category = str(entry_dict.get("category", "note")).upper()
+            content = entry_dict.get("content", "")
+            metadata = entry_dict.get("metadata", {}) or {}
+            meta_str = (
+                f" | metadata: {metadata}" if metadata else ""
+            )
+            lines.append(f"- [{category}] {content}{meta_str}")
+        return lines
 
-        Returns:
-            Formatted message for strategist
-        """
+    @staticmethod
+    def build_pathfinder_message(state: State) -> str:
+        """Build context message for the pathfinder agent."""
         findings_summary = "\n".join(
             [
                 f"- [{f['type']}] {f['description']} (Severity: {f['severity']}, Confidence: {f['confidence']})"
@@ -25,7 +51,6 @@ class MessageBuilder:
             ]
         )
 
-        # Format target list
         targets = state.get("target", [])
         if targets:
             target_str = "\n".join(
@@ -34,30 +59,28 @@ class MessageBuilder:
         else:
             target_str = "  No targets identified yet"
 
+        memory_lines = MessageBuilder._memory_to_lines(state.get("memory", []))
+        memory_summary = "\n".join(memory_lines)
+
         return f"""CONTEXT:
 Target(s):
 {target_str}
 
 Reconnaissance Findings:
-{findings_summary if findings_summary else "No findings yet"}
+{findings_summary if findings_summary else 'No findings yet'}
 
-Based on these findings, formulate a strategic objective for exploitation."""
+Recent Memory Highlights:
+{memory_summary}
+
+Based on these signals, focus the objective on the most impactful path forward."""
 
     @staticmethod
-    def build_tactician_message(state: ScoutState) -> str:
-        """Build context message for tactician agent.
-
-        Args:
-            state: Current state with target and findings
-
-        Returns:
-            Formatted message for tactician
-        """
+    def build_planner_message(state: ScoutState) -> str:
+        """Build context message for the planner agent."""
         findings_summary = "\n".join(
             [f"- [{f['type']}] {f['description']}" for f in state.get("findings", [])]
         )
 
-        # Format target list
         targets = state.get("target", [])
         if targets:
             target_str = ", ".join(
@@ -66,25 +89,34 @@ Based on these findings, formulate a strategic objective for exploitation."""
         else:
             target_str = "No targets identified yet"
 
-        return f"""STRATEGIC OBJECTIVE: {state.get("objective")}
-CURRENT STATE:
-Target(s): {target_str}
-Known Findings: {findings_summary if findings_summary else "No findings yet"}
+        plan_lines = MessageBuilder._plan_to_lines(state.get("plan"))
+        plan_summary = "\n".join(plan_lines)
+        memory_lines = MessageBuilder._memory_to_lines(state.get("memory", []))
+        memory_summary = "\n".join(memory_lines)
 
-Create a task DAG to accomplish this strategic objective.
+        findings_text = findings_summary if findings_summary else "No findings yet"
+
+        return f"""STRATEGIC OBJECTIVE: {state.get('objective', 'Unspecified objective')}
+CURRENT TARGETS: {target_str}
+KNOWN FINDINGS:
+{findings_text}
+
+CURRENT PLAN SNAPSHOT:
+{plan_summary}
+
+RECENT MEMORY HIGHLIGHTS:
+{memory_summary}
+
+Develop a refreshed multi-phase plan (1-4 phases) with clear exit criteria. Use the structured response format to provide:
+- plan.current_phase
+- plan.total_phases
+- plan.phases[] with title, status, criteria, optional notes
+- memory[] entries capturing critical insights or follow-up tasks.
 """
 
     @staticmethod
     def build_executor_message(state: ScoutState) -> str:
-        """Build context message for executor agent.
-
-        Args:
-            state: Current state with target information
-
-        Returns:
-            Formatted message for executor
-        """
-        # Format target list
+        """Build context message for executor agent."""
         targets = state.get("target", [])
         if targets:
             target_str = ", ".join(
@@ -93,11 +125,20 @@ Create a task DAG to accomplish this strategic objective.
         else:
             target_str = "No targets identified yet"
 
-        return f"""STRATEGIC OBJECTIVE: {state.get("objective")}
+        plan_lines = MessageBuilder._plan_to_lines(state.get("plan"))
+        plan_summary = "\n".join(plan_lines)
+        memory_lines = MessageBuilder._memory_to_lines(state.get("memory", []))
+        memory_summary = "\n".join(memory_lines)
 
-CURRENT TASK DAG:
-{state.get("DAG", {})}
+        return f"""STRATEGIC OBJECTIVE: {state.get('objective', 'Unspecified objective')}
+
+ACTIVE PLAN:
+{plan_summary}
+
+RECENT MEMORY HIGHLIGHTS:
+{memory_summary}
 
 TARGET(S): {target_str}
 
-Execute this task using available tools."""
+Execute the next phase in the plan using the available tools. When generating evidence or insights, call the memory tool to persist entries.
+"""
