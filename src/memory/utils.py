@@ -14,12 +14,21 @@ Namespace = Tuple[str, ...]
 def _first_target(state: Mapping[str, Any] | None) -> str:
     if not state:
         return "global"
-    targets = state.get("target", []) or []
+    # Handle both dict-like and Pydantic model states
+    if hasattr(state, 'target'):
+        targets = state.target if state.target else []
+    else:
+        targets = state.get("target", []) or []
     if not targets:
         return "global"
     primary = targets[0]
-    ip = primary.get("ip", "unknown")
-    port = primary.get("port")
+    # Handle both dict and Pydantic model targets
+    if hasattr(primary, 'ip'):
+        ip = primary.ip if primary.ip else "unknown"
+        port = primary.port if hasattr(primary, 'port') else None
+    else:
+        ip = primary.get("ip", "unknown")
+        port = primary.get("port")
     if port is None:
         return f"{ip}"
     return f"{ip}:{port}"

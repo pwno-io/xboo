@@ -27,7 +27,7 @@ class Planner(BaseAgent):
             response_format=PlanResponse,
         )
 
-    def invoke(self, state: ScoutState, store: Optional[BaseStore] = None) -> ScoutState:
+    def invoke(self, state: ScoutState, store: Optional[BaseStore] = None) -> dict:
         """Execute planner agent and return plan + memory aware state."""
         with memory_context(store, state):
             try:
@@ -52,7 +52,7 @@ class Planner(BaseAgent):
 
         # Ensure the plan carries the latest objective context
         if not plan_payload.get("objective"):
-            plan_payload["objective"] = state.get("objective", "")
+            plan_payload["objective"] = state.objective if state.objective else ""
 
         try:
             store_plan_to_memory(plan_payload, state)
@@ -60,11 +60,13 @@ class Planner(BaseAgent):
             # Gracefully degrade if persistence fails (e.g., invalid payload)
             pass
 
-        updated_memory = state.get("memory", []) + memory_payload
+        updated_memory = state.memory + memory_payload
 
+        # Convert state to dict for merging
+        state_dict = state.model_dump() if hasattr(state, 'model_dump') else dict(state)
         return {
-            **state,
-            "messages": state.get("messages", []) + result.get("messages", []),
+            **state_dict,
+            "messages": state.messages + result.get("messages", []),
             "plan": plan_payload,
             "memory": updated_memory,
         }

@@ -29,7 +29,7 @@ class Executor(BaseAgent):
         )
 
     # NOTE: executor should return a state type of parent graph
-    def invoke(self, state: ScoutState, store: Optional[BaseStore] = None) -> State:
+    def invoke(self, state: ScoutState, store: Optional[BaseStore] = None) -> dict:
         try:
             with memory_context(store, state):
                 result = self.agent.invoke(
@@ -37,7 +37,9 @@ class Executor(BaseAgent):
                         "messages": [HumanMessage(content=MessageBuilder.build_executor_message(state))]
                     }
                 )
-            return {**state, "messages": state.get("messages", []) + result.get("messages", [])}
+            # Convert state to dict for merging
+            state_dict = state.model_dump() if hasattr(state, 'model_dump') else dict(state)
+            return {**state_dict, "messages": state.messages + result.get("messages", [])}
         except Exception as e:  # pylint: disable=broad-except
             return f"Error during execution: {str(e)}"
 

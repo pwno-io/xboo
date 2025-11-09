@@ -25,7 +25,7 @@ class Pathfinder(BaseAgent):
             response_format=None,
         )
 
-    def invoke(self, state: ScoutState, store: Optional[BaseStore] = None) -> ScoutState:
+    def invoke(self, state: ScoutState, store: Optional[BaseStore] = None) -> dict:
         with memory_context(store, state):
             result = self.agent.invoke(
                 {
@@ -34,9 +34,11 @@ class Pathfinder(BaseAgent):
                     ]
                 }
             )
+        # Convert state to dict for merging
+        state_dict = state.model_dump() if hasattr(state, 'model_dump') else dict(state)
         return {
-            **state,
-            "messages": state.get("messages", []) + result.get("messages", []),
+            **state_dict,
+            "messages": state.messages + result.get("messages", []),
             "objective": result.get("messages", [])[-1].content # TODO: think if necessary to ResponseFormat it, since redundant
         }
 

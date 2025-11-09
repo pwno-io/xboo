@@ -26,9 +26,9 @@ class TargetModel(BaseModel):
 
 
 class StateModel(BaseModel):
-    messages: list[AnyMessage]
-    target: List[TargetModel]
-    findings: list[FindingWithFeedbackModel]
+    messages: list[AnyMessage] = Field(default_factory=list)
+    target: List[TargetModel] = Field(default_factory=list)
+    findings: list[FindingWithFeedbackModel] = Field(default_factory=list)
 
 
 class ReconOutput(BaseModel):
