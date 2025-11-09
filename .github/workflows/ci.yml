@@ -32,14 +32,12 @@ jobs:
     name: Validation Benchmark
     runs-on: ubuntu-latest
     # Only run when API key secrets are available
-    if: ${{ secrets.OPENROUTER_API_KEY != '' || secrets.SCOUT_API_KEY != '' }}
+    if: ${{ secrets.API_KEY != '' }}
     env:
       # Prefer SCOUT_*; fall back to OPENROUTER_* for recon
-      SCOUT_API_KEY: ${{ secrets.SCOUT_API_KEY || secrets.OPENROUTER_API_KEY }}
-      SCOUT_BASE_URL: ${{ secrets.SCOUT_BASE_URL }}
-      SCOUT_MODEL: ${{ secrets.SCOUT_MODEL }}
-      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-      OPENROUTER_API_URL: ${{ secrets.OPENROUTER_API_URL }}
+      API_KEY: ${{ secrets.API_KEY }}
+      API_BASE: ${{ secrets.API_BASE }}
+      MODEL: ${{ secrets.MODEL }}
       # Allow overriding the command from repo variables if desired
       VALIDATION_COMMAND: ${{ vars.VALIDATION_COMMAND }}
       # Optional: space-separated list of benchmark dirs to run (relative to repo root)
