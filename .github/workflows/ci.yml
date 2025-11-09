@@ -1,0 +1,152 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  lint:
+    name: Lint and type-check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Sync dependencies
+        run: uv sync
+
+      - name: Ruff + MyPy
+        run: make lint
+
+  validation-benchmark:
+    name: Validation Benchmark
+    runs-on: ubuntu-latest
+    # Only run when API key secrets are available
+    if: ${{ secrets.OPENROUTER_API_KEY != '' || secrets.SCOUT_API_KEY != '' }}
+    env:
+      # Prefer SCOUT_*; fall back to OPENROUTER_* for recon
+      SCOUT_API_KEY: ${{ secrets.SCOUT_API_KEY || secrets.OPENROUTER_API_KEY }}
+      SCOUT_BASE_URL: ${{ secrets.SCOUT_BASE_URL }}
+      SCOUT_MODEL: ${{ secrets.SCOUT_MODEL }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      OPENROUTER_API_URL: ${{ secrets.OPENROUTER_API_URL }}
+      # Allow overriding the command from repo variables if desired
+      VALIDATION_COMMAND: ${{ vars.VALIDATION_COMMAND }}
+      # Optional: space-separated list of benchmark dirs to run (relative to repo root)
+      BENCHMARK_PATHS: ${{ vars.BENCHMARK_PATHS }}
+      # Optional: limit auto-discovery count if BENCHMARK_PATHS is empty
+      MAX_BENCHMARKS: ${{ vars.MAX_BENCHMARKS }}
+      # Optional: injected flag value for builds
+      FLAG: ${{ vars.FLAG }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Checkout validation-benchmarks
+        uses: actions/checkout@v4
+        with:
+          repository: xbow-engineering/validation-benchmarks
+          path: validation-benchmarks
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Sync dependencies
+        run: uv sync
+
+      - name: Environment info
+        run: |
+          python --version
+          uv --version
+          docker version
+          docker compose version
+
+      - name: Discover benchmarks (from BENCHMARK_PATHS or auto)
+        id: discover
+        shell: bash
+        run: |
+          set -euo pipefail
+          paths="${BENCHMARK_PATHS:-}"
+          if [ -n "$paths" ]; then
+            printf '%s\n' $paths > bench_list.txt
+          else
+            if [ -d validation-benchmarks/benchmarks ]; then
+              mapfile -t found < <(find validation-benchmarks/benchmarks -mindepth 1 -maxdepth 1 -type d | sort | head -n "${MAX_BENCHMARKS:-1}")
+              if [ "${#found[@]}" -gt 0 ]; then
+                printf '%s\n' "${found[@]}" > bench_list.txt
+              fi
+            fi
+          fi
+          count="$( [ -f bench_list.txt ] && wc -l < bench_list.txt || echo 0 )"
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+          echo "Discovered $count benchmark(s)."
+
+      - name: Run validation-benchmarks (Docker Compose)
+        if: steps.discover.outputs.count != '0'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p bench-logs
+          while IFS= read -r bench; do
+            echo "::group::Building $bench"
+            pushd "$bench" >/dev/null
+            flag_val="${FLAG:-FLAG{ci-validation}}"
+            (make build FLAG="$flag_val") || docker compose build --build-arg flag="$flag_val"
+            docker compose up -d --wait
+            popd >/dev/null
+            echo "::endgroup::"
+            export XBOW_INITIAL_CONTEXT="CHALLENGE: $(basename "$bench"). The target is in localhost."
+            safe_name="$(echo "$bench" | sed 's#[/ ]#_#g')"
+            # Capture output and validate discovered flag matches injected flag
+            set +e
+            uv run python main.py 2>&1 | tee "bench-logs/${safe_name}-xbow.log"
+            status=$?
+            set -e
+            pushd "$bench" >/dev/null
+            docker compose ps || true
+            docker compose logs --no-color > "../bench-logs/${safe_name}.log" || true
+            docker compose down -v || true
+            popd >/dev/null
+            if ! grep -q "$flag_val" "bench-logs/${safe_name}-xbow.log"; then
+              echo "Expected flag not found in output for $bench"
+              echo "Expected: $flag_val"
+              exit 1
+            fi
+            if [ $status -ne 0 ]; then
+              echo "Run against $bench exited with status $status"
+              exit $status
+            fi
+          done < bench_list.txt
+
+      - name: Fallback simple validation (no benchmarks discovered)
+        if: steps.discover.outputs.count == '0'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cmd="${VALIDATION_COMMAND:-uv run python main.py}"
+          echo "Running fallback: $cmd"
+          eval "$cmd"
+
+      - name: Upload benchmark logs
+        if: steps.discover.outputs.count != '0'
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-benchmarks-logs
+          path: bench-logs/**
+
+

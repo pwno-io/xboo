@@ -23,6 +23,7 @@ workflow.add_conditional_edges(
     scout.route,  # Use Scout's route method to determine next step
     {
         GraphNode.RECON: GraphNode.RECON,  # New attack surface found, return to recon
+        GraphNode.SCOUT: GraphNode.SCOUT,  # Scout failed and found no new attack surface, return to scout
         GraphNode.END: END,  # Flag found or task complete, end mission
     }
 )

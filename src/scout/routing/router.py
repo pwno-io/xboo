@@ -48,7 +48,30 @@ class Router:
         for finding in recent_scout_findings:
             text = finding.get("description", "") + str(finding.get("metadata", {}))
             if self.flag_detector.detect(text):
-                return GraphNode.END  # Flag found, mission complete
+                flags = self.flag_detector.extract_flags(text)
+                # Only accept flags that exactly match flag{...} or FLAG{...}
+                valid_flags = [f for f in (flags or []) if re.fullmatch(r'(?:flag|FLAG)\{[^}]+\}', f)]
+                if valid_flags:
+                    print("FLAG:", ", ".join(valid_flags))
+                    # Attach flags to state so they are available at END
+                    try:
+                        findings_list = state.get("findings", [])
+                        findings_list.append({
+                            "type": "flag",
+                            "description": f"Captured flags: {', '.join(valid_flags)}",
+                            "severity": "high",
+                            "confidence": "high",
+                            "metadata": {
+                                "flags": valid_flags,
+                                "source": "router_detection"
+                            },
+                            "feedback": ""
+                        })
+                        state["findings"] = findings_list
+                    except Exception:
+                        # Best-effort: don't block graph termination on state mutation issues
+                        pass
+                    return GraphNode.END
         
         # Priority 2: Use LLM to analyze if new attack surface discovered
         new_surfaces = self.surface_analyzer.analyze_for_new_attack_surface(recent_scout_findings)
@@ -83,6 +106,7 @@ class Router:
             return GraphNode.RECON  # Go back to enumerate new vectors based on what we learned
         
         # Default: End if we've exhausted the current attack vector
-        # Avoid infinite scout loops
-        return GraphNode.END
+        # Return to scout to try again
+        print("ENDING SCOUT")
+        return GraphNode.SCOUT
 
