@@ -6,6 +6,7 @@ from langchain_openai import ChatOpenAI
 from src.settings import settings
 from src.state import State, ReconOutput
 from src.tool import run_bash, run_ipython
+from src.scout.state import ScoutState
 
 llm = ChatOpenAI(
     api_key=settings.API_KEY,
@@ -26,7 +27,7 @@ class Recon:
             response_format=ReconOutput,
         )
 
-    def invoke(self, state: State) -> State:
+    def invoke(self, state: State) -> ScoutState:
         # We don't have a target yet - the agent needs to discover it
         # Invoke the agent directly (create_agent returns a graph)
         messages = state.get("messages", []) + [
@@ -50,6 +51,9 @@ class Recon:
 
             "recon": structured_output.report,
             "findings": structured_output.findings,
+
+            "objective": "",
+            "DAG": {},
         }
 
 RECON_SYSTEM_PROMPT = """
