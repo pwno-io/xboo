@@ -34,6 +34,7 @@ class Recon:
                 content="Perform reconnaissance to identify and analyze the target. "
                 "First, discover the target endpoint(s) from the challenge information, "
                 "then identify open ports, services, and potential security findings for pentesting."
+                f"target: {state.get('target', [])}"
             )
         ]
         result = self.agent.invoke({"messages": messages})
