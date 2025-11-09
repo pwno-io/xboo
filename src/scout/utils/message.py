@@ -1,5 +1,6 @@
 """Message construction utilities for Scout agents."""
 
+from src.scout.state import ScoutState
 from src.state import State
 from typing import List
 
@@ -43,11 +44,10 @@ Reconnaissance Findings:
 Based on these findings, formulate a strategic objective for exploitation."""
 
     @staticmethod
-    def build_tactician_message(strategic_objective: str, state: State) -> str:
+    def build_tactician_message(state: ScoutState) -> str:
         """Build context message for tactician agent.
 
         Args:
-            strategic_objective: The strategic objective from strategist
             state: Current state with target and findings
 
         Returns:
@@ -66,26 +66,19 @@ Based on these findings, formulate a strategic objective for exploitation."""
         else:
             target_str = "No targets identified yet"
 
-        return f"""STRATEGIC OBJECTIVE: {strategic_objective}
-
+        return f"""STRATEGIC OBJECTIVE: {state.get("objective")}
 CURRENT STATE:
 Target(s): {target_str}
 Known Findings: {findings_summary if findings_summary else "No findings yet"}
 
 Create a task DAG to accomplish this strategic objective.
-
-Use the function call create_task_dag to submit the DAG. Define:
-- Node: {{ id: string, phase: enumerate|trigger|observe|compare, description: string, dependencies?: string[] }}
-- Edge: {{ source: string, target: string }}
-Return ONLY the function call with fields: nodes, edges, evidence_criteria. Include 3-7 nodes."""
+"""
 
     @staticmethod
-    def build_executor_message(task_node: dict, strategic_objective: str, state: State) -> str:
+    def build_executor_message(state: ScoutState) -> str:
         """Build context message for executor agent.
 
         Args:
-            task_node: Task node with id, phase, and description
-            strategic_objective: The strategic objective from strategist
             state: Current state with target information
 
         Returns:
@@ -100,12 +93,10 @@ Return ONLY the function call with fields: nodes, edges, evidence_criteria. Incl
         else:
             target_str = "No targets identified yet"
 
-        return f"""STRATEGIC OBJECTIVE: {strategic_objective}
+        return f"""STRATEGIC OBJECTIVE: {state.get("objective")}
 
-CURRENT TASK:
-- ID: {task_node["id"]}
-- Phase: {task_node["phase"]}
-- Description: {task_node["description"]}
+CURRENT TASK DAG:
+{state.get("DAG", {})}
 
 TARGET(S): {target_str}
 

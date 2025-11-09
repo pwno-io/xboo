@@ -1,51 +1,36 @@
 """Executor agent for script generation and task execution."""
 
-from typing import TYPE_CHECKING
 from langchain.agents import create_agent
 from langchain_core.messages import HumanMessage
+from src.scout.utils.message import MessageBuilder
+
 from ..prompt import EXECUTOR_PROMPT
-from ..tools import execution, python
-from langchain_openai import ChatOpenAI
+from src.tool import run_bash, run_ipython
+from src.scout.agents.base import BaseAgent
+from src.scout.state import ScoutState
+from src.state import State
 
-
-class Executor:
+class Executor(BaseAgent):
     """Executor agent for executing tasks with tools."""
     
-    def __init__(self, model: "ChatOpenAI"):
-        """Initialize executor agent.
-        
-        Args:
-            model: ChatOpenAI model instance
-        """
+    def __init__(self):
+        super().__init__()
         self.agent = create_agent(
-            model,
-            tools=[execution, python],
+            self.model,
+            tools=[run_bash, run_ipython],
             system_prompt=EXECUTOR_PROMPT,
             response_format=None
         )
     
-    def invoke(self, message: str) -> str:
-        """Execute task using ReAct agent with tools.
-        
-        Args:
-            message: Context message with task details
-            
-        Returns:
-            Execution output as string
-        """
+    # NOTE: executor should return a state type of parent graph
+    def invoke(self, state: ScoutState) -> State:
         try:
-            # LangGraph API uses messages list
-            result = self.agent.invoke({
-                "messages": [HumanMessage(content=message)]
-            })
-            
-            # Extract last message content from LangGraph result
-            messages = result.get("messages", [])
-            if messages:
-                last_message = messages[-1]
-                return str(last_message.content)
-            return ""
-            
+            result = self.agent.invoke(
+                {
+                    "messages": [HumanMessage(content=MessageBuilder.build_executor_message(state))]
+                }
+            )
+            return {**state, "messages": state.get("messages", []) + result.get("messages", [])}
         except Exception as e:
             return f"Error during execution: {str(e)}"
 

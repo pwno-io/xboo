@@ -2,86 +2,31 @@ import json
 from typing import Any, List, Literal, TypedDict, Optional
 
 from langchain_core.messages import AnyMessage
-from pydantic import BaseModel
-
-
-class GraphNode:
-    """Graph node identifiers for agent routing."""
-
-    RECON = "recon"
-    SCOUT = "scout"
-    END = "__end__"
-
-
-GraphNodeType = Literal["recon", "scout", "__end__"]
-
+from typing import Literal
+from pydantic import BaseModel, Field
 
 # Pydantic Models
 class FindingModel(BaseModel):
-    type: str
-    description: str
-    severity: str
-    confidence: str
-    metadata_json: str
-
-    def to_struct(self) -> dict[str, Any]:
-        """Convert to TypedDict-compatible dictionary."""
-        return {
-            "type": self.type,
-            "description": self.description,
-            "severity": self.severity,
-            "confidence": self.confidence,
-            "metadata": json.loads(self.metadata_json),
-        }
-
+    type: Literal["information", "curiosity", "vulnerability"]  = Field(description="The type of the finding.")
+    description: str    = Field(description="The description of the finding.")
+    confidence: float   = Field(description="The confidence of the finding.")
+    metadata_json: str  = Field(description="The metadata of the finding.")
 
 class FindingWithFeedbackModel(FindingModel):
     feedback: str
-
-    def to_struct(self) -> dict[str, Any]:
-        """Convert to TypedDict-compatible dictionary."""
-        base = super().to_struct()
-        base["feedback"] = self.feedback
-        return base
-
-
 class TargetModel(BaseModel):
     ip: str
     port: int
-
-    def to_struct(self) -> dict[str, Any]:
-        """Convert to TypedDict-compatible dictionary."""
-        return {
-            "ip": self.ip,
-            "port": self.port,
-        }
-
+    annotation: str = Field(description="What is the target?")
 
 class StateModel(BaseModel):
     messages: list[AnyMessage]
     target: TargetModel
     findings: list[FindingWithFeedbackModel]
 
-    def to_struct(self) -> dict[str, Any]:
-        """Convert to TypedDict-compatible dictionary."""
-        return {
-            "messages": self.messages,
-            "target": self.target.to_struct(),
-            "findings": [finding.to_struct() for finding in self.findings],
-        }
-
-
 class ReconOutput(BaseModel):
     findings: List[FindingWithFeedbackModel]
-    target: List[TargetModel]
-
-    def to_struct(self) -> dict[str, Any]:
-        """Convert to TypedDict-compatible dictionary."""
-        return {
-            "target": [target.to_struct() for target in self.target],
-            "findings": [finding.to_struct() for finding in self.findings],
-        }
-
+    target: List[TargetModel] # why do we need
 
 # TypedDict versions (original names)
 class Finding(TypedDict):
@@ -91,17 +36,24 @@ class Finding(TypedDict):
     confidence: str
     metadata: dict
 
-
 class FindingWithFeedback(Finding):
     feedback: str
-
 
 class Target(TypedDict):
     ip: str
     port: int
+    
 
+# FOR conditional edges
+class Redirection(TypedDict):
+    # src: str # this would be hard-override by current node
+    dst: Literal["recon", "scout", "end"] = Field(description="The destination node of the which node to redirect to.")
+    reason: str = Field(description="The reason for the redirection.")
 
 class State(TypedDict):
     messages: list[AnyMessage]
+
+    entry: str = Field(description="The entry point of the state.") # given by problem
     target: list[Target]
     findings: list[FindingWithFeedback]
+    redirections: list[Redirection] = Field(description="The redirections states")

@@ -1,47 +1,35 @@
 """Strategist agent for high-level strategic planning."""
 
-from typing import TYPE_CHECKING
 from langchain_core.messages import HumanMessage
 from langchain.agents import create_agent
-from ..prompt import STRATEGIST_PROMPT
 
-if TYPE_CHECKING:
-    from langchain_openai import ChatOpenAI
-
-
-class Strategist:
+from src.scout.utils.message import MessageBuilder
+from src.scout.agents.base import BaseAgent
+from src.scout.prompt import STRATEGIST_PROMPT
+from src.scout.state import ScoutState
+class Strategist(BaseAgent):
     """Strategist agent for formulating strategic objectives."""
     
-    def __init__(self, model: "ChatOpenAI"):
-        """Initialize strategist agent.
-        
-        Args:
-            model: ChatOpenAI model instance
-        """
+    def __init__(self):
+        super().__init__()
         self.agent = create_agent(
-            model,
+            self.model,
             tools=[],
             system_prompt=STRATEGIST_PROMPT,
             response_format=None
         )
     
-    def invoke(self, message: str) -> str:
-        """Execute strategist agent and return strategic objective.
-        
-        Args:
-            message: Context message with findings and target info
-            
-        Returns:
-            Strategic objective as string
-        """
-        # LangGraph API uses messages list
-        result = self.agent.invoke({
-            "messages": [HumanMessage(content=message)]
-        })
-        # Extract last message content from LangGraph result
-        messages = result.get("messages", [])
-        if messages:
-            last_message = messages[-1]
-            return str(last_message.content)
-        return ""
+    def invoke(self, state: ScoutState) -> ScoutState:
+        result = self.agent.invoke(
+            {
+                "messages": [
+                    HumanMessage(content=MessageBuilder.build_strategist_message(state))
+                ]
+            }
+        )
+        return {
+            **state,
+            "messages": state.get("messages", []) + result.get("messages", []),
+            "objective": result.get("messages", [])[-1].content # TODO: think if necessary to ResponseFormat it, since redundant
+        }
 

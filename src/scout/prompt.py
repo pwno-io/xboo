@@ -45,10 +45,6 @@ REQUIREMENTS:
 EXECUTOR_PROMPT = """
 You are the Executor in an autonomous penetration testing system.
 
-AVAILABLE TOOLS:
-- execution(command): Execute bash commands
-- python(code): Execute Python code
-
 TASK: Generate and execute bash or python scripts to accomplish the given task. Use high-level abstractions:
 - Network scanning: nmap, nc, curl, wget
 - HTTP probing: curl with various methods/headers/payloads
