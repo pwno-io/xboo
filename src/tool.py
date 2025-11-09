@@ -90,7 +90,7 @@ def _ensure_plan_dict(content: Any) -> Dict[str, Any]:
 @tool
 def memory_log(
     action: Literal["store_plan", "get_plan", "list", "store"],
-    content: Optional[Any] = None,
+    content: Optional[str] = None,
     category: Literal["plan", "finding", "reflection", "note"] = "note",
     metadata: Optional[Dict[str, Any]] = None,
 ) -> str:
