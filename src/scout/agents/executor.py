@@ -1,6 +1,6 @@
 """Executor agent for script generation and task execution."""
 
-from typing import Optional
+from typing import Any, Optional
 
 from langchain.agents import create_agent
 from langchain_core.messages import HumanMessage
@@ -41,5 +41,8 @@ class Executor(BaseAgent):
             state_dict = state.model_dump() if hasattr(state, 'model_dump') else dict(state)
             return {**state_dict, "messages": state.messages + result.get("messages", [])}
         except Exception as e:  # pylint: disable=broad-except
-            return f"Error during execution: {str(e)}"
+            # Always return a dict to satisfy LangGraph's state update contract
+            state_dict = state.model_dump() if hasattr(state, 'model_dump') else dict[str, Any](state)
+            error_message = HumanMessage(content=f"Error during execution: {str(e)}")
+            return {**state_dict, "messages": state.messages + [error_message]}
 

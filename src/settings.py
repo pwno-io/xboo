@@ -11,9 +11,9 @@ class Settings(BaseSettings):
     langsmith_project: Optional[str] = Field(None, validation_alias="LANGSMITH_PROJECT")
     langsmith_tracing: Optional[bool] = Field(None, validation_alias="LANGSMITH_TRACING")
 
-    API_KEY: str = Field(default=..., validation_alias=AliasChoices("API_KEY", "SCOUT_API_KEY", "MOONSHOT_API_KEY", "OPENAI_API_KEY"))
-    API_BASE: str = Field(default=..., validation_alias=AliasChoices("API_BASE", "SCOUT_API_BASE", "MOONSHOT_API_BASE", "OPENAI_API_BASE"))
-    MODEL: str = Field(default=..., validation_alias=AliasChoices("MODEL", "SCOUT_MODEL", "MOONSHOT_MODEL", "OPENAI_MODEL"))
+    API_KEY: str = Field(default=..., validation_alias=AliasChoices("API_KEY"))
+    API_BASE: str = Field(default=..., validation_alias=AliasChoices("API_BASE"))
+    MODEL: str = Field(default=..., validation_alias=AliasChoices("MODEL"))
 
     CHALLENGE_API_KEY: str = Field(default=..., validation_alias=AliasChoices("CHALLENGE_API_KEY"))
     CHALLENGE_API_BASE: str = Field(default=..., validation_alias=AliasChoices("CHALLENGE_API_BASE"))
