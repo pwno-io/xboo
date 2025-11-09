@@ -25,8 +25,9 @@ class StateModel(BaseModel):
     findings: list[FindingWithFeedbackModel]
 
 class ReconOutput(BaseModel):
+    report: str = Field(description="The report of the reconnaissance.")
     findings: List[FindingWithFeedbackModel]
-    target: List[TargetModel] # why do we need
+    # target: List[TargetModel] # why do we need
 
 # TypedDict versions (original names)
 class Finding(TypedDict):
@@ -53,7 +54,8 @@ class Redirection(TypedDict):
 class State(TypedDict):
     messages: list[AnyMessage]
 
-    entry: str = Field(description="The entry point of the state.") # given by problem
     target: list[Target]
+    report: str
+
     findings: list[FindingWithFeedback]
-    redirections: list[Redirection] = Field(description="The redirections states")
+    flag: str = Field(description="The flag of the challenge.")

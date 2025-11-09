@@ -45,8 +45,8 @@ class Recon:
         return {
             # "target": state.get("target", []),
             "messages": state.get("messages", []) + result.get("messages", []),
+            "target": state.get("target", []),
 
-            "target": structured_output.target,
             "findings": structured_output.findings,
         }
 
