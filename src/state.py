@@ -27,7 +27,7 @@ class StateModel(BaseModel):
 class ReconOutput(BaseModel):
     report: str = Field(description="The report of the reconnaissance.")
     findings: List[FindingWithFeedbackModel]
-    # target: List[TargetModel] # why do we need
+    target: List[TargetModel] # why do we need
 
 # TypedDict versions (original names)
 class Finding(TypedDict):
