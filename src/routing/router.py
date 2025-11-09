@@ -47,8 +47,8 @@ class Router(BaseAgent):
                     "redirection": state.redirection.append(
                         RedirectionWithSrc(
                             dst="end",
-                        reason=result.insight,
-                        src="router"
+                            insight=result.insight,
+                            src="router"
                         )
                     )
                 }
@@ -62,7 +62,7 @@ class Router(BaseAgent):
                     "redirection": state.redirection.append(
                         RedirectionWithSrc(
                             dst="recon",
-                            reason=result.insight,
+                            insight=result.insight,
                             src="router"
                         )
                     )
@@ -77,7 +77,7 @@ class Router(BaseAgent):
                     "redirection": state.redirection.append(
                         RedirectionWithSrc(
                             dst="scout",
-                            reason=result.insight,
+                            insight=result.insight,
                             src="router"
                         )
                     )
