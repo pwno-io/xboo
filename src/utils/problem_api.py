@@ -109,6 +109,13 @@ class ProblemAPIClient:
         """
         client = self._get_client()
         response = await client.get(f"/api/v1/hint/{challenge_code}")
+        if response.status_code == 500:
+            error_data = response.json()
+            error_msg = error_data.get("detail", "Unknown server error")
+            raise httpx.HTTPStatusError(
+                f"Server error: {error_msg}", request=response.request, response=response
+            )
+
         response.raise_for_status()
         return HintResponse.model_validate(response.json())
 
@@ -128,6 +135,14 @@ class ProblemAPIClient:
         client = self._get_client()
         request_data = AnswerRequest(challenge_code=challenge_code, answer=answer)
         response = await client.post("/api/v1/answer", json=request_data.model_dump())
+
+        if response.status_code == 500:
+            error_data = response.json()
+            error_msg = error_data.get("detail", "Unknown server error")
+            raise httpx.HTTPStatusError(
+                f"Server error: {error_msg}", request=response.request, response=response
+            )
+
         response.raise_for_status()
         return AnswerResponse.model_validate(response.json())
 
@@ -145,9 +160,7 @@ async def get_hint(challenge_code: str) -> HintResponse:
         return await client.get_hint(challenge_code)
 
 
-async def submit_answer(
-    challenge_code: str, answer: str
-) -> AnswerResponse:
+async def submit_answer(challenge_code: str, answer: str) -> AnswerResponse:
     """Convenience function to submit answer without managing client lifecycle."""
     async with ProblemAPIClient() as client:
         return await client.submit_answer(challenge_code, answer)

@@ -9,7 +9,7 @@ from langgraph.store.memory import InMemoryStore
 from src.graph import build_graph
 from src.utils.problem_api import ProblemAPIClient, Challenge
 from src.state import State, Target
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, SystemMessage
 
 
 async def run_single_challenge(challenge: Challenge, graph_index: int):
@@ -24,7 +24,11 @@ async def run_single_challenge(challenge: Challenge, graph_index: int):
 
     # Prepare initial state with challenge information
     initial_state = State(
-        messages=[],
+        messages=[
+            SystemMessage(
+                content=f"Your challenge code is `{challenge.challenge_code}`. Use it for submitting answer or getting hint."
+            )
+        ],
         target=[
             Target(ip=challenge.target_info.ip, port=port) for port in challenge.target_info.port
         ],
