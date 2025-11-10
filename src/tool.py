@@ -7,7 +7,7 @@ from langchain_core.tools import tool
 
 from src.memory.tools import get_plan, list_memories, store_memory, store_plan
 from src.memory.utils import save_plan
-from src.utils.problem_api import ProblemAPIClient, AnswerResponse
+from src.utils.problem_api import ProblemAPIClient, AnswerResponse, HintResponse
 
 __all__ = [
     "get_plan",
@@ -17,6 +17,7 @@ __all__ = [
     "save_plan",
     "store_memory",
     "store_plan",
+    "get_hint",
     "submit_answer",
 ]
 
@@ -32,6 +33,8 @@ def run_bash(code: str) -> str:
     Run the given code in a Bash shell.
     like ping, curl, dig, whois, traceroute, nmap, etc.
     * Limit your output if it's possibly too long to be helpful.
+
+    store all output (temp) file, under /tmp/<ip.replace('.', '-')>-<target-port>/
 
     Args:
         code: The bash command to run.
@@ -99,3 +102,27 @@ async def submit_answer(challenge_code: str, answer: str) -> str:
                 return f"Incorrect answer. Challenge is {'solved' if response.is_solved else 'not solved'}."
     except Exception as e:  # pylint: disable=broad-except
         return f"Error submitting answer: {str(e)}"
+
+
+@tool
+async def get_hint(challenge_code: str) -> str:
+    """
+    Retrieve a hint for the specified challenge. 
+    (NOTE THAT GET HINT WILL BE PENALIZED, DON'T USE IT UNLESS WE HAVE NO CLUE!)
+
+    Args:
+        challenge_code: The code of the challenge to request a hint for.
+
+    Returns:
+        A string summarizing the hint content and penalty information.
+    """
+    try:
+        async with ProblemAPIClient() as client:
+            response: HintResponse = await client.get_hint(challenge_code)
+            hint_intro = "First time using this hint." if response.first_use else "Hint was previously viewed."
+            return (
+                f"{hint_intro} Penalty: {response.penalty_points} points. "
+                f"Hint content: {response.hint_content}"
+            )
+    except Exception as e:  # pylint: disable=broad-except
+        return f"Error retrieving hint: {str(e)}"

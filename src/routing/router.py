@@ -1,43 +1,48 @@
 """Routing logic for Scout agent to determine next graph node."""
 
 from typing import Literal
+from langchain.agents import create_agent
 from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.graph import END
 from langgraph.types import Command
 
 from src.scout.state import ScoutState
-from src.scout.utils.message import MessageBuilder
 from src.scout.agents.base import BaseAgent
 from src.state import RedirectionModel, RedirectionWithSrc
+from src.tool import get_hint, submit_answer
 
+SYSTEM = """
+You're a redirection LLM, you determine where does the execution go next.
+* recon: reconnaissance agent for information gathering
+* scout: scout agent for exploitation from given information context
+* end: end the execution
+                
+You should return the following fields:
+* dst: The destination node of the which node to redirect to.
+* insight: The insight for the redirection.
+(At the meantime, what you observed from the third-party, "god's view", e.g., what did the previous researcher missed that's maybe obvious to you?...)
+
+Decide which agent should be pass to next
+** If you find that previous agents are already able to find the flag, you should submit the flag via tool immediately.**
+"""
 
 class Router(BaseAgent):
     def __init__(self):
         super().__init__()
-        self.llm = self.model.with_structured_output(RedirectionModel)
+        self.agent = create_agent(
+            self.model,
+            tools=[get_hint, submit_answer],
+            system_prompt=SYSTEM,
+            response_format=RedirectionModel,
+        )
 
     def route(self, state: ScoutState) -> Command[Literal["recon", "scout", END]]:
-        result = self.llm.invoke(
-            [
-                SystemMessage(
-                    content="""
-                You're a redirection LLM, you determine where does the execution go next.
-                * recon: reconnaissance agent for information gathering
-                * scout: scout agent for exploitation from given information context
-                * end: end the execution
-                
-                You should return the following fields:
-                * dst: The destination node of the which node to redirect to.
-                * insight: The insight for the redirection.
-                (At the meantime, what you observed from the third-party, "god's view", e.g., what did the previous researcher missed that's maybe obvious to you?...)
-
-                Decide which agent should be pass to next
-                ** If you find that previous agents are already able to find the flag, you should redirect to the end node immediately.**
-                """
-                ),
-                HumanMessage(content=f"current state: {state}"),
-            ]
+        result = self.agent.invoke(
+            {
+                "messages": [HumanMessage(content=f"current state: {state}")]
+            }
         )
+        result = result.get("structured_response")
         
         if result.dst == "end":
             print(f"**MEOW: flag found: {result.insight}**")
