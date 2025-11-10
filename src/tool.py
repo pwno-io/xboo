@@ -27,7 +27,7 @@ def get_execution_timeout() -> int:
 @tool
 def run_bash(code: str) -> str:
     """
-    Run the given code in a Bash shell. Use this for network reconnaissance commands
+    Run the given code in a Bash shell.
     like ping, curl, dig, whois, traceroute, nmap, etc.
 
     Args:
@@ -52,6 +52,7 @@ def run_bash(code: str) -> str:
 def run_ipython(code: str) -> str:
     """
     Run the given code in an IPython shell.
+    We recommend use this for elaborate or repetitive tasks.
 
     Args:
         code: The code to run.

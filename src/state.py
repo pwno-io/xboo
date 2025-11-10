@@ -25,10 +25,10 @@ class TargetModel(BaseModel):
     annotation: str = Field(description="What is the target?")
 
 
-class StateModel(BaseModel):
-    messages: list[AnyMessage] = Field(default_factory=list)
-    target: List[TargetModel] = Field(default_factory=list)
-    findings: list[FindingWithFeedbackModel] = Field(default_factory=list)
+# class StateModel(BaseModel):
+#     messages: list[AnyMessage] = Field(default_factory=list)
+#     target: List[TargetModel] = Field(default_factory=list)
+#     findings: list[FindingWithFeedbackModel] = Field(default_factory=list)
 
 
 class ReconOutput(BaseModel):

@@ -1,11 +1,11 @@
 from typing import Any, Dict, List, Optional
 from pydantic import Field
 
-from src.state import StateModel
+from src.state import State
 from src.scout.model import PlanModel
 
 
-class ScoutState(StateModel):
+class ScoutState(State):
     objective: str = Field(description="The strategic objective for the scout agent.", default="")
     plan: Optional[PlanModel] = Field(
         default=None,
