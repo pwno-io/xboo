@@ -3,6 +3,19 @@
 from src.scout.state import ScoutState
 from src.state import State
 
+FIELD_HEURISTICS = (
+    "FIELD NOTES:\n"
+    "- Assume weak credential discipline; test friendly combinations (admin/admin, admin/password, user/user, familiar-name123) early.\n"
+    "- Treat identifier parameters, cookies, and GraphQL arguments as mutable—probe near-neighbours, header swaps, and encoding variations.\n"
+    "- Proof typically revolves around grabbing obvious artefacts (flag files in root paths, secrets/ENV dumps) or indisputable client execution like alert('XSS').\n"
+    "- Template engines, command runners, and upload validators are rarely airtight: queue SSTI probes, command separators, and extension bypasses.\n"
+    "- Long-tail avenues (blind SQLi, JWT tinkering, SSRF/XXE, race/smuggling) need disciplined iteration—log every hint and payload adjustment."
+)
+
+
+def _with_fieldcraft(text: str) -> str:
+    return f"{text}\n\n{FIELD_HEURISTICS}"
+
 
 class MessageBuilder:
     """Builds context messages for Scout agents."""
@@ -71,7 +84,7 @@ class MessageBuilder:
         memory_lines = MessageBuilder._memory_to_lines(memory)
         memory_summary = "\n".join(memory_lines)
 
-        return f"""CONTEXT:
+        message = f"""CONTEXT:
 Target(s):
 {target_str}
 
@@ -82,6 +95,7 @@ Recent Memory Highlights:
 {memory_summary}
 
 Based on these signals, focus the objective on the most impactful path forward."""
+        return _with_fieldcraft(message)
 
     @staticmethod
     def build_planner_message(state: ScoutState) -> str:
@@ -109,7 +123,7 @@ Based on these signals, focus the objective on the most impactful path forward."
         findings_text = findings_summary if findings_summary else "No findings yet"
         objective = state.get('objective', 'Unspecified objective')
 
-        return f"""STRATEGIC OBJECTIVE: {objective}
+        message = f"""STRATEGIC OBJECTIVE: {objective}
 CURRENT TARGETS: {target_str}
 KNOWN FINDINGS:
 {findings_text}
@@ -126,6 +140,7 @@ Develop a refreshed multi-phase plan (1-4 phases) with clear exit criteria. Use 
 - plan.phases[] with title, status, criteria, optional notes
 - memory[] entries capturing critical insights or follow-up tasks.
 """
+        return _with_fieldcraft(message)
 
     @staticmethod
     def build_executor_message(state: ScoutState) -> str:
@@ -146,7 +161,7 @@ Develop a refreshed multi-phase plan (1-4 phases) with clear exit criteria. Use 
         
         objective = state.get('objective', 'Unspecified objective')
 
-        return f"""STRATEGIC OBJECTIVE: {objective}
+        message = f"""STRATEGIC OBJECTIVE: {objective}
 
 ACTIVE PLAN:
 {plan_summary}
@@ -158,3 +173,4 @@ TARGET(S): {target_str}
 
 Execute the next phase in the plan using the available tools. When generating evidence or insights, call the memory tool to persist entries.
 """
+        return _with_fieldcraft(message)
