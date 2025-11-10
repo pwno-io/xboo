@@ -50,41 +50,35 @@ async def run_single_challenge(challenge: Challenge, graph_index: int):
         return None
 
 
-async def wait_until_10am():
-    """Wait until 10:00 AM."""
-    now = datetime.datetime.now()
-    target_time = now.replace(hour=16, minute=1, second=0, microsecond=0)
+async def wait_15_minutes():
+    """Wait for 15 minutes."""
+    wait_seconds = 15 * 60  # 15 minutes in seconds
+    start_time = datetime.datetime.now()
+    target_time = start_time + datetime.timedelta(seconds=wait_seconds)
     
-    # If it's already past 10am today, set for tomorrow
-    if now >= target_time:
-        target_time += datetime.timedelta(days=1)
-    
-    wait_seconds = (target_time - now).total_seconds()
-    
-    print(f"Current time: {now.strftime('%Y-%m-%d %H:%M:%S')}")
-    print(f"Waiting until: {target_time.strftime('%Y-%m-%d %H:%M:%S')}")
-    print(f"Wait time: {wait_seconds / 3600:.2f} hours")
+    print(f"Current time: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"Will start at: {target_time.strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"Waiting for 15 minutes...")
     
     # Wait with periodic updates
     while datetime.datetime.now() < target_time:
-        remaining = (target_time - datetime.datetime.now()).total_seconds()
-        if remaining > 3600:
-            print(f"Still waiting... {remaining / 3600:.2f} hours remaining")
-            await asyncio.sleep(3600)  # Sleep for 1 hour
-        elif remaining > 60:
-            print(f"Still waiting... {remaining / 60:.2f} minutes remaining")
+        elapsed = (datetime.datetime.now() - start_time).total_seconds()
+        remaining = wait_seconds - elapsed
+        
+        if remaining > 60:
+            print(f"Still waiting... {remaining / 60:.1f} minutes remaining")
             await asyncio.sleep(60)  # Sleep for 1 minute
         else:
             print(f"Almost time! {remaining:.0f} seconds remaining")
             await asyncio.sleep(1)  # Sleep for 1 second
     
-    print("It's 10:00 AM! Starting competition...")
+    print("Wait complete! Starting competition...")
 
 
 async def run_competition(skip_wait: bool = False):
     """Main competition runner."""
     if not skip_wait:
-        await wait_until_10am()
+        await wait_15_minutes()
     
     print("\n🏁 COMPETITION STARTING! 🏁\n")
     
