@@ -31,7 +31,7 @@ class Router(BaseAgent):
         super().__init__()
         self.agent = create_agent(
             self.model,
-            tools=[get_hint, submit_answer],
+            tools=[submit_answer],
             system_prompt=SYSTEM,
             response_format=RedirectionModel,
         )
