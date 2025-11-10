@@ -49,7 +49,7 @@ async def run_single_challenge(challenge: Challenge, graph_index: int):
 async def wait_until_10am():
     """Wait until 10:00 AM."""
     now = datetime.datetime.now()
-    target_time = now.replace(hour=10, minute=31, second=0, microsecond=0)
+    target_time = now.replace(hour=11, minute=01, second=0, microsecond=0)
     
     # If it's already past 10am today, set for tomorrow
     if now >= target_time:
@@ -110,6 +110,23 @@ async def run_competition(skip_wait: bool = False):
         
         # Wait for all challenges to complete
         results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        # Retry any challenges that failed due to errors
+        failed_indices = [
+            idx
+            for idx, result in enumerate(results)
+            if isinstance(result, Exception) or result is None
+        ]
+
+        if failed_indices:
+            print("\nRetrying failed challenges...\n")
+            retry_tasks = [
+                asyncio.create_task(run_single_challenge(unsolved_challenges[idx], idx))
+                for idx in failed_indices
+            ]
+            retry_results = await asyncio.gather(*retry_tasks, return_exceptions=True)
+            for idx, retry_result in zip(failed_indices, retry_results):
+                results[idx] = retry_result
         
         # Print summary
         print("\n📊 COMPETITION RESULTS 📊")
@@ -119,6 +136,10 @@ async def run_competition(skip_wait: bool = False):
         for i, (challenge, result) in enumerate(zip(unsolved_challenges, results)):
             if isinstance(result, Exception):
                 print(f"Challenge {challenge.challenge_code}: ❌ Error - {result}")
+            elif result is None:
+                print(
+                    f"Challenge {challenge.challenge_code}: ❌ Error - graph did not return a result"
+                )
             elif result and result.get("flag"):
                 print(f"Challenge {challenge.challenge_code}: ✅ Flag found!")
             else:
