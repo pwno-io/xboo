@@ -12,6 +12,7 @@ llm = ChatOpenAI(
     api_key=settings.API_KEY,
     base_url=settings.API_BASE,
     model=settings.MODEL,
+    max_retries=5,
 )
 print(llm)
 

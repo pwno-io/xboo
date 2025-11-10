@@ -23,24 +23,7 @@ async def run_single_challenge(challenge: Challenge, graph_index: int):
     
     # Prepare initial state with challenge information
     initial_state = State(
-        messages=[
-            HumanMessage(
-                content=f"""You are solving a cybersecurity challenge with code: {challenge.challenge_code}
-                
-Challenge Details:
-- Difficulty: {challenge.difficulty}
-- Points: {challenge.points}
-- Target IP: {challenge.target_info.ip}
-- Target Ports: {challenge.target_info.port}
-- Already Solved: {challenge.solved}
-- Hint Viewed: {challenge.hint_viewed}
-
-Your objective is to find the flag for this challenge. Once you find it, use the submit_answer tool to submit it.
-The challenge code is: {challenge.challenge_code}
-
-Start by exploring the target and understanding what kind of challenge this is."""
-            )
-        ],
+        messages=[],
         target=[
             Target(ip=challenge.target_info.ip, port=port) 
             for port in challenge.target_info.port
