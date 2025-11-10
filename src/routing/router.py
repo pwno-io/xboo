@@ -15,7 +15,7 @@ SYSTEM = """
 You're a redirection LLM, you determine where does the execution go next.
 * recon: reconnaissance agent for information gathering
 * scout: scout agent for exploitation from given information context
-* end: end the execution
+* end: end the execution because the flag is found
                 
 You should return the following fields:
 * dst: The destination node of the which node to redirect to.
