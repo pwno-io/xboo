@@ -36,7 +36,11 @@ async def run_single_challenge(challenge: Challenge, graph_index: int):
     
     try:
         # Run the graph
-        result = await graph.ainvoke(initial_state, store=store)
+        result = await graph.ainvoke(
+            initial_state,
+            store=store,
+            config={"recursion_limit": 100},
+        )
         print(f"[Graph {graph_index}] Completed challenge: {challenge.challenge_code}")
         if result.get("flag"):
             print(f"[Graph {graph_index}] Found flag: {result['flag']}")
