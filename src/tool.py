@@ -84,6 +84,7 @@ def run_ipython(code: str) -> str:
 async def submit_answer(challenge_code: str, answer: str) -> str:
     """
     Submit an answer for a challenge.
+    If returned 429, retry again after 1 second.
 
     Args:
         challenge_code: The code of the challenge.
@@ -110,6 +111,7 @@ async def get_hint(challenge_code: str) -> str:
     Retrieve a hint for the specified challenge. 
     (NOTE THAT GET HINT WILL BE PENALIZED, DON'T USE IT UNLESS WE HAVE NO CLUE!)
 
+    If returned 429, retry again after 1 second.
     Args:
         challenge_code: The code of the challenge to request a hint for.
 
