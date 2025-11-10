@@ -23,7 +23,7 @@ You should return the following fields:
 (At the meantime, what you observed from the third-party, "god's view", e.g., what did the previous researcher missed that's maybe obvious to you?...)
 
 Decide which agent should be pass to next
-** If you find that previous agents are already able to find the flag, you should submit the flag via tool immediately.**
+** If you find that previous agents are already able to find the flag, you should submit the flag via tool immediately. The flag should only be in the format of flag{...} or FLAG{...} **
 """
 
 class Router(BaseAgent):
