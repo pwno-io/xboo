@@ -1,0 +1,162 @@
+"""Competition runner that starts at 10am and runs challenges in parallel."""
+
+import asyncio
+import datetime
+from typing import List
+from langgraph.store.memory import InMemoryStore
+
+from src.graph import build_graph
+from src.utils.problem_api import ProblemAPIClient, Challenge
+from src.state import State, Target
+from langchain_core.messages import HumanMessage
+
+
+async def run_single_challenge(challenge: Challenge, graph_index: int):
+    """Run a single challenge in its own graph instance."""
+    print(f"[Graph {graph_index}] Starting challenge: {challenge.challenge_code}")
+    
+    # Create separate store for each graph instance
+    store = InMemoryStore()
+    
+    # Build the graph with its own store
+    graph = build_graph()
+    
+    # Prepare initial state with challenge information
+    initial_state = State(
+        messages=[
+            HumanMessage(
+                content=f"""You are solving a cybersecurity challenge with code: {challenge.challenge_code}
+                
+Challenge Details:
+- Difficulty: {challenge.difficulty}
+- Points: {challenge.points}
+- Target IP: {challenge.target_info.ip}
+- Target Ports: {challenge.target_info.port}
+- Already Solved: {challenge.solved}
+- Hint Viewed: {challenge.hint_viewed}
+
+Your objective is to find the flag for this challenge. Once you find it, use the submit_answer tool to submit it.
+The challenge code is: {challenge.challenge_code}
+
+Start by exploring the target and understanding what kind of challenge this is."""
+            )
+        ],
+        target=[
+            Target(ip=challenge.target_info.ip, port=port) 
+            for port in challenge.target_info.port
+        ],
+        recon="",
+        findings=[],
+        flag="",
+        redirection=[]
+    )
+    
+    try:
+        # Run the graph
+        result = await graph.ainvoke(initial_state, store=store)
+        print(f"[Graph {graph_index}] Completed challenge: {challenge.challenge_code}")
+        if result.get("flag"):
+            print(f"[Graph {graph_index}] Found flag: {result['flag']}")
+        return result
+    except Exception as e:
+        print(f"[Graph {graph_index}] Error in challenge {challenge.challenge_code}: {str(e)}")
+        return None
+
+
+async def wait_until_10am():
+    """Wait until 10:00 AM."""
+    now = datetime.datetime.now()
+    target_time = now.replace(hour=10, minute=0, second=0, microsecond=0)
+    
+    # If it's already past 10am today, set for tomorrow
+    if now >= target_time:
+        target_time += datetime.timedelta(days=1)
+    
+    wait_seconds = (target_time - now).total_seconds()
+    
+    print(f"Current time: {now.strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"Waiting until: {target_time.strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"Wait time: {wait_seconds / 3600:.2f} hours")
+    
+    # Wait with periodic updates
+    while datetime.datetime.now() < target_time:
+        remaining = (target_time - datetime.datetime.now()).total_seconds()
+        if remaining > 3600:
+            print(f"Still waiting... {remaining / 3600:.2f} hours remaining")
+            await asyncio.sleep(3600)  # Sleep for 1 hour
+        elif remaining > 60:
+            print(f"Still waiting... {remaining / 60:.2f} minutes remaining")
+            await asyncio.sleep(60)  # Sleep for 1 minute
+        else:
+            print(f"Almost time! {remaining:.0f} seconds remaining")
+            await asyncio.sleep(1)  # Sleep for 1 second
+    
+    print("It's 10:00 AM! Starting competition...")
+
+
+async def run_competition(skip_wait: bool = False):
+    """Main competition runner."""
+    if not skip_wait:
+        await wait_until_10am()
+    
+    print("\n🏁 COMPETITION STARTING! 🏁\n")
+    
+    # Get challenges from API
+    try:
+        async with ProblemAPIClient() as client:
+            challenges_response = await client.get_challenges()
+            
+        print(f"Stage: {challenges_response.current_stage}")
+        print(f"Total challenges: {len(challenges_response.challenges)}")
+        
+        # Filter out already solved challenges
+        unsolved_challenges = [c for c in challenges_response.challenges if not c.solved]
+        print(f"Unsolved challenges: {len(unsolved_challenges)}")
+        
+        if not unsolved_challenges:
+            print("All challenges are already solved! 🎉")
+            return
+        
+        # Run all unsolved challenges in parallel
+        tasks = []
+        for i, challenge in enumerate(unsolved_challenges):
+            task = asyncio.create_task(run_single_challenge(challenge, i))
+            tasks.append(task)
+        
+        print(f"\nStarting {len(tasks)} parallel graph instances...\n")
+        
+        # Wait for all challenges to complete
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        # Print summary
+        print("\n📊 COMPETITION RESULTS 📊")
+        successful = sum(1 for r in results if r and not isinstance(r, Exception))
+        print(f"Successful completions: {successful}/{len(tasks)}")
+        
+        for i, (challenge, result) in enumerate(zip(unsolved_challenges, results)):
+            if isinstance(result, Exception):
+                print(f"Challenge {challenge.challenge_code}: ❌ Error - {result}")
+            elif result and result.get("flag"):
+                print(f"Challenge {challenge.challenge_code}: ✅ Flag found!")
+            else:
+                print(f"Challenge {challenge.challenge_code}: ⚠️ Completed but no flag found")
+                
+    except Exception as e:
+        print(f"Error getting challenges: {str(e)}")
+
+
+async def main():
+    """Main entry point."""
+    import sys
+    
+    # Check if --now flag is passed to skip waiting
+    skip_wait = "--now" in sys.argv
+    
+    if skip_wait:
+        print("Skipping wait, starting immediately...")
+    
+    await run_competition(skip_wait=skip_wait)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

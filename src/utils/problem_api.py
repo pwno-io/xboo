@@ -133,21 +133,21 @@ class ProblemAPIClient:
 
 
 # Convenience function for one-off requests
-async def get_challenges(config: Optional[Config] = None) -> ChallengesResponse:
+async def get_challenges() -> ChallengesResponse:
     """Convenience function to get challenges without managing client lifecycle."""
-    async with ProblemAPIClient(config) as client:
+    async with ProblemAPIClient() as client:
         return await client.get_challenges()
 
 
-async def get_hint(challenge_code: str, config: Optional[Config] = None) -> HintResponse:
+async def get_hint(challenge_code: str) -> HintResponse:
     """Convenience function to get hint without managing client lifecycle."""
-    async with ProblemAPIClient(config) as client:
+    async with ProblemAPIClient() as client:
         return await client.get_hint(challenge_code)
 
 
 async def submit_answer(
-    challenge_code: str, answer: str, config: Optional[Config] = None
+    challenge_code: str, answer: str
 ) -> AnswerResponse:
     """Convenience function to submit answer without managing client lifecycle."""
-    async with ProblemAPIClient(config) as client:
+    async with ProblemAPIClient() as client:
         return await client.submit_answer(challenge_code, answer)

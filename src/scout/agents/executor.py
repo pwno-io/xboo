@@ -19,6 +19,7 @@ from src.tool import (
     run_ipython,
     store_memory,
     store_plan,
+    submit_answer,
 )
 from src.scout.agents.base import BaseAgent
 from src.scout.state import ScoutState
@@ -35,7 +36,7 @@ class Executor(BaseAgent):
         super().__init__()
         self.agent = create_agent(
             self.model,
-            tools=[run_bash, run_ipython, store_plan, get_plan, list_memories, store_memory],
+            tools=[run_bash, run_ipython, store_plan, get_plan, list_memories, store_memory, submit_answer],
             system_prompt=EXECUTOR_PROMPT,
             response_format=None
         )

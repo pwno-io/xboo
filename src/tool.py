@@ -7,6 +7,7 @@ from langchain_core.tools import tool
 
 from src.memory.tools import get_plan, list_memories, store_memory, store_plan
 from src.memory.utils import save_plan
+from src.utils.problem_api import ProblemAPIClient, AnswerResponse
 
 __all__ = [
     "get_plan",
@@ -16,6 +17,7 @@ __all__ = [
     "save_plan",
     "store_memory",
     "store_plan",
+    "submit_answer",
 ]
 
 
@@ -73,3 +75,27 @@ def run_ipython(code: str) -> str:
         return "Command timed out after 60 seconds"
     except Exception as e:  # pylint: disable=broad-except
         return f"Error running IPython command: {str(e)}"
+
+
+@tool
+async def submit_answer(challenge_code: str, answer: str) -> str:
+    """
+    Submit an answer for a challenge.
+
+    Args:
+        challenge_code: The code of the challenge.
+        answer: The answer/flag to submit.
+
+    Returns:
+        A string describing the result of the submission.
+    """
+    try:
+        async with ProblemAPIClient() as client:
+            response: AnswerResponse = await client.submit_answer(challenge_code, answer)
+            
+            if response.correct:
+                return f"Correct! Earned {response.earned_points} points. Challenge is {'solved' if response.is_solved else 'not yet fully solved'}."
+            else:
+                return f"Incorrect answer. Challenge is {'solved' if response.is_solved else 'not solved'}."
+    except Exception as e:  # pylint: disable=broad-except
+        return f"Error submitting answer: {str(e)}"
