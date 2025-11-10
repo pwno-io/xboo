@@ -51,9 +51,9 @@ class Executor(BaseAgent):
                 )
             # Convert state to dict for merging
             state_dict = state.model_dump() if hasattr(state, 'model_dump') else dict(state)
-            return {**state_dict, "messages": state.messages + result.get("messages", [])}
+            return {**state_dict, "messages": state.get("messages", []) + result.get("messages", [])}
         except Exception as e:  # pylint: disable=broad-except
             # Always return a dict to satisfy LangGraph's state update contract
             state_dict = state.model_dump() if hasattr(state, 'model_dump') else dict[str, Any](state)
             error_message = HumanMessage(content=f"Error during execution: {str(e)}")
-            return {**state_dict, "messages": state.messages + [error_message]} 
+            return {**state_dict, "messages": state.get("messages", []) + [error_message]} 

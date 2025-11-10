@@ -29,6 +29,7 @@ def run_bash(code: str) -> str:
     """
     Run the given code in a Bash shell.
     like ping, curl, dig, whois, traceroute, nmap, etc.
+    * Limit your output if it's possibly too long to be helpful.
 
     Args:
         code: The bash command to run.
@@ -41,6 +42,8 @@ def run_bash(code: str) -> str:
         print(code)
         result = subprocess.run(["bash", "-c", code], capture_output=True, text=True, timeout=60)
         print(result.stdout + result.stderr)
+        if "Licensed under MIT (https://github.com/twbs/bootstrap/blob/main/LICENSE)" in result.stdout:
+            return "Why are you curl bootstrap? This response is too long and not helpful." # NOTE: might cause unintended behavior
         return result.stdout + result.stderr
     except subprocess.TimeoutExpired:
         return "Command timed out after 60 seconds"
@@ -52,7 +55,7 @@ def run_bash(code: str) -> str:
 def run_ipython(code: str) -> str:
     """
     Run the given code in an IPython shell.
-    We recommend use this for elaborate or repetitive tasks.
+    We recommend use this for elaborate or repetitive tasks. (e.g., emulation/exploit)
 
     Args:
         code: The code to run.

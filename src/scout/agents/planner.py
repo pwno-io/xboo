@@ -52,7 +52,7 @@ class Planner(BaseAgent):
 
         # Ensure the plan carries the latest objective context
         if not plan_payload.get("objective"):
-            plan_payload["objective"] = state.objective if state.objective else ""
+            plan_payload["objective"] = state.get("objective", "")
 
         try:
             save_plan(plan_payload, state=state, store=store)
@@ -60,13 +60,13 @@ class Planner(BaseAgent):
             # Gracefully degrade if persistence fails (e.g., invalid payload)
             pass
 
-        updated_memory = state.memory + memory_payload
+        updated_memory = state.get("memory", []) + memory_payload
 
         # Convert state to dict for merging
         state_dict = state.model_dump() if hasattr(state, 'model_dump') else dict(state)
         return {
             **state_dict,
-            "messages": state.messages + result.get("messages", []),
+            "messages": state.get("messages", []) + result.get("messages", []),
             "plan": plan_payload,
             "memory": updated_memory,
         }

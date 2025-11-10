@@ -38,7 +38,7 @@ class Pathfinder(BaseAgent):
         state_dict = state.model_dump() if hasattr(state, 'model_dump') else dict(state)
         return {
             **state_dict,
-            "messages": state.messages + result.get("messages", []),
+            "messages": state.get("messages", []) + result.get("messages", []),
             "objective": result.get("messages", [])[-1].content # TODO: think if necessary to ResponseFormat it, since redundant
         }
 

@@ -15,10 +15,7 @@ def _first_target(state: Mapping[str, Any] | None) -> str:
     if not state:
         return "global"
     # Handle both dict-like and Pydantic model states
-    if hasattr(state, 'target'):
-        targets = state.target if state.target else []
-    else:
-        targets = state.get("target", []) or []
+    targets = state.get("target", []) or []
     if not targets:
         return "global"
     primary = targets[0]

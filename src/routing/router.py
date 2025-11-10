@@ -26,9 +26,10 @@ class Router(BaseAgent):
                 * scout: scout agent for exploitation from given information context
                 * end: end the execution
                 
-                Your output should be a JSON object with the following fields:
+                You should return the following fields:
                 * dst: The destination node of the which node to redirect to.
-                * reason: The reason for the redirection.
+                * insight: The insight for the redirection.
+                (At the meantime, what you observed from the third-party, "god's view", e.g., what did the previous researcher missed that's maybe obvious to you?...)
 
                 Decide which agent should be pass to next
                 ** If you find that previous agents are already able to find the flag, you should redirect to the end node immediately.**
@@ -44,7 +45,7 @@ class Router(BaseAgent):
                 goto=END,
                 update={
                     "flag": result.insight,
-                    "redirection": state.redirection.append(
+                    "redirection": state.get("redirection", []).append(
                         RedirectionWithSrc(
                             dst="end",
                             insight=result.insight,
@@ -58,8 +59,8 @@ class Router(BaseAgent):
             return Command(
                 goto="recon",
                 update={
-                    "messages": state.messages + [HumanMessage(content=f"Router insight: {result.insight}")],
-                    "redirection": state.redirection.append(
+                    "messages": state.get("messages", []) + [HumanMessage(content=f"Router insight: {result.insight}")],
+                    "redirection": state.get("redirection", []).append(
                         RedirectionWithSrc(
                             dst="recon",
                             insight=result.insight,
@@ -73,8 +74,8 @@ class Router(BaseAgent):
             return Command(
                 goto="scout",
                 update={
-                    "messages": state.messages + [HumanMessage(content=f"Router insight: {result.insight}")],
-                    "redirection": state.redirection.append(
+                    "messages": state.get("messages", []) + [HumanMessage(content=f"Router insight: {result.insight}")],
+                    "redirection": state.get("redirection", []).append(
                         RedirectionWithSrc(
                             dst="scout",
                             insight=result.insight,

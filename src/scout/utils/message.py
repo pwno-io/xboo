@@ -45,16 +45,9 @@ class MessageBuilder:
     def build_pathfinder_message(state) -> str:
         """Build context message for the pathfinder agent."""
         # Handle both State (TypedDict) and ScoutState (Pydantic)
-        if hasattr(state, 'findings'):
-            # Pydantic model
-            findings = state.findings
-            targets = state.target
-            memory = state.memory if hasattr(state, 'memory') else []
-        else:
-            # TypedDict
-            findings = state.get("findings", [])
-            targets = state.get("target", [])
-            memory = state.get("memory", [])
+        findings = state.get("findings", [])
+        targets = state.get("target", [])
+        memory = state.get("memory", [])
         
         findings_summary = "\n".join(
             [
@@ -93,13 +86,13 @@ Based on these signals, focus the objective on the most impactful path forward."
     @staticmethod
     def build_planner_message(state: ScoutState) -> str:
         """Build context message for the planner agent."""
-        findings = state.findings if hasattr(state, 'findings') else []
+        findings = state.get('findings', [])
         findings_summary = "\n".join(
             [f"- [{f.type if hasattr(f, 'type') else f['type']}] {f.description if hasattr(f, 'description') else f['description']}" 
              for f in findings]
         )
 
-        targets = state.target if hasattr(state, 'target') else []
+        targets = state.get('target', [])
         if targets:
             target_str = ", ".join(
                 [f"{t.ip if hasattr(t, 'ip') else t.get('ip', 'Unknown')}:{t.port if hasattr(t, 'port') else t.get('port', 'Unknown')}" 
@@ -108,13 +101,13 @@ Based on these signals, focus the objective on the most impactful path forward."
         else:
             target_str = "No targets identified yet"
 
-        plan_lines = MessageBuilder._plan_to_lines(state.plan if hasattr(state, 'plan') else None)
+        plan_lines = MessageBuilder._plan_to_lines(state.get('plan'))
         plan_summary = "\n".join(plan_lines)
-        memory_lines = MessageBuilder._memory_to_lines(state.memory if hasattr(state, 'memory') else [])
+        memory_lines = MessageBuilder._memory_to_lines(state.get('memory', []))
         memory_summary = "\n".join(memory_lines)
 
         findings_text = findings_summary if findings_summary else "No findings yet"
-        objective = state.objective if hasattr(state, 'objective') else 'Unspecified objective'
+        objective = state.get('objective', 'Unspecified objective')
 
         return f"""STRATEGIC OBJECTIVE: {objective}
 CURRENT TARGETS: {target_str}
@@ -137,7 +130,7 @@ Develop a refreshed multi-phase plan (1-4 phases) with clear exit criteria. Use 
     @staticmethod
     def build_executor_message(state: ScoutState) -> str:
         """Build context message for executor agent."""
-        targets = state.target if hasattr(state, 'target') else []
+        targets = state.get('target', [])
         if targets:
             target_str = ", ".join(
                 [f"{t.ip if hasattr(t, 'ip') else t.get('ip', 'Unknown')}:{t.port if hasattr(t, 'port') else t.get('port', 'Unknown')}" 
@@ -146,12 +139,12 @@ Develop a refreshed multi-phase plan (1-4 phases) with clear exit criteria. Use 
         else:
             target_str = "No targets identified yet"
 
-        plan_lines = MessageBuilder._plan_to_lines(state.plan if hasattr(state, 'plan') else None)
+        plan_lines = MessageBuilder._plan_to_lines(state.get('plan'))
         plan_summary = "\n".join(plan_lines)
-        memory_lines = MessageBuilder._memory_to_lines(state.memory if hasattr(state, 'memory') else [])
+        memory_lines = MessageBuilder._memory_to_lines(state.get('memory', []))
         memory_summary = "\n".join(memory_lines)
         
-        objective = state.objective if hasattr(state, 'objective') else 'Unspecified objective'
+        objective = state.get('objective', 'Unspecified objective')
 
         return f"""STRATEGIC OBJECTIVE: {objective}
 
