@@ -41,47 +41,56 @@ class Router(BaseAgent):
         
         if result.dst == "end":
             print(f"**MEOW: flag found: {result.insight}**")
+            # Clone the existing list and append the new entry
+            redirection_list = state.get("redirection", [])[:] # Create a copy
+            redirection_list.append(
+                RedirectionWithSrc(
+                    dst="end",
+                    insight=result.insight,
+                    src="router"
+                )
+            )
             return Command(
                 goto=END,
                 update={
                     "flag": result.insight,
-                    "redirection": state.get("redirection", []).append(
-                        RedirectionWithSrc(
-                            dst="end",
-                            insight=result.insight,
-                            src="router"
-                        )
-                    )
+                    "redirection": redirection_list
                 }
             )
         
         elif result.dst == "recon":
+            # Clone the existing list and append the new entry
+            redirection_list = state.get("redirection", [])[:] # Create a copy
+            redirection_list.append(
+                RedirectionWithSrc(
+                    dst="recon",
+                    insight=result.insight,
+                    src="router"
+                )
+            )
             return Command(
                 goto="recon",
                 update={
                     "messages": state.get("messages", []) + [HumanMessage(content=f"Router insight: {result.insight}")],
-                    "redirection": state.get("redirection", []).append(
-                        RedirectionWithSrc(
-                            dst="recon",
-                            insight=result.insight,
-                            src="router"
-                        )
-                    )
+                    "redirection": redirection_list
                 }
             )
             
         elif result.dst == "scout":
+            # Clone the existing list and append the new entry
+            redirection_list = state.get("redirection", [])[:] # Create a copy
+            redirection_list.append(
+                RedirectionWithSrc(
+                    dst="scout",
+                    insight=result.insight,
+                    src="router"
+                )
+            )
             return Command(
                 goto="scout",
                 update={
                     "messages": state.get("messages", []) + [HumanMessage(content=f"Router insight: {result.insight}")],
-                    "redirection": state.get("redirection", []).append(
-                        RedirectionWithSrc(
-                            dst="scout",
-                            insight=result.insight,
-                            src="router"
-                        )
-                    )
+                    "redirection": redirection_list
                 }
             )
 
