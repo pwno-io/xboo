@@ -49,7 +49,7 @@ async def run_single_challenge(challenge: Challenge, graph_index: int):
 async def wait_until_10am():
     """Wait until 10:00 AM."""
     now = datetime.datetime.now()
-    target_time = now.replace(hour=11, minute=1, second=0, microsecond=0)
+    target_time = now.replace(hour=16, minute=1, second=0, microsecond=0)
     
     # If it's already past 10am today, set for tomorrow
     if now >= target_time:
