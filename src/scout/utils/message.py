@@ -172,6 +172,5 @@ RECENT MEMORY HIGHLIGHTS:
 TARGET(S): {target_str}
 
 Execute the next phase in the plan using the available tools. When generating evidence or insights, call the memory tool to persist entries.
-Note that you can only request the target 100 request! be careful
 """
         return _with_fieldcraft(message)

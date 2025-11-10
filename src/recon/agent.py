@@ -78,7 +78,5 @@ DELIVERABLES:
 - Findings: structured items capturing impactful leads (e.g., exposed admin portal with weak creds, GraphQL endpoint exposing IDs, upload that echoes file content).
 - Plan: outline the immediate next moves (credential spray, ID fuzzing, template probes, shell upload, etc.) that set the rest of the team up for success.
 
-Note that you can only request the target 100 request! be careful
-
 Read available material (including source snippets if provided), catalogue the surface, and articulate the most promising entry points without wasting cycles.
 """
